@@ -29,6 +29,7 @@ class DetourNetwork {
         config: DetourConfig,
         fingerprint: ProbabilisticFingerprint,
         linkType: LinkType = .deferred,
+        session: URLSession = .shared,
         completion: @escaping @Sendable (DetourResult) -> Void
     ) {
 
@@ -52,7 +53,7 @@ class DetourNetwork {
 
         DetourLogger.debug(tag, "Sending fingerprint to API")
 
-        URLSession.shared.dataTask(with: request) { data, response, error in
+        session.dataTask(with: request) { data, response, error in
             handleResponse(
                 data: data,
                 response: response,
@@ -124,7 +125,7 @@ class DetourNetwork {
         }
     }
 
-    static func resolveShortLink(config: DetourConfig, url: String) async -> URL? {
+    static func resolveShortLink(config: DetourConfig, url: String, session: URLSession = .shared) async -> URL? {
         guard let endpoint = DetourConstants.resolveShortUrl else {
             DetourLogger.warn(tag, "[Detour:NETWORK_ERROR] Short link resolution failed: invalid endpoint")
             return nil
@@ -142,7 +143,7 @@ class DetourNetwork {
         request.httpBody = requestBody
 
         do {
-            let (data, response) = try await URLSession.shared.data(for: request)
+            let (data, response) = try await session.data(for: request)
             guard let httpResponse = response as? HTTPURLResponse else { return nil }
             if httpResponse.statusCode == 404 { return nil }
             guard (200 ... 299).contains(httpResponse.statusCode) else {
@@ -179,7 +180,7 @@ class DetourNetwork {
         }
     }
 
-    static func sendUniversalLinkClick(config: DetourConfig, url: String, linkId: String? = nil) async -> (allowed: Bool, clickId: String?) {
+    static func sendUniversalLinkClick(config: DetourConfig, url: String, linkId: String? = nil, session: URLSession = .shared) async -> (allowed: Bool, clickId: String?) {
         guard let endpoint = DetourConstants.universalLinkClickUrl else {
             return (allowed: true, clickId: nil)  // fail-open
         }
@@ -254,7 +255,7 @@ class DetourNetwork {
         request.httpBody = body
 
         do {
-            let (data, response) = try await URLSession.shared.data(for: request)
+            let (data, response) = try await session.data(for: request)
             guard let http = response as? HTTPURLResponse else { return (allowed: true, clickId: nil) }
 
             let decoded = try? JSONDecoder().decode(ResponseBody.self, from: data)

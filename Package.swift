@@ -21,5 +21,10 @@ let package = Package(
         .target(
             name: "Detour"
         ),
+        .testTarget(
+            name: "DetourTests",
+            dependencies: ["Detour"],
+            path: "Tests/DetourTests"
+        ),
     ]
 )
