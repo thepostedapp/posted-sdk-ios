@@ -1,6 +1,6 @@
 import Foundation
 
-public enum DetourEventName: String, CaseIterable {
+public enum PostedEventName: String, CaseIterable {
     case login
     case search
     case share

@@ -15,7 +15,7 @@ enum AnalyticsNetwork {
 
     private static func baseRequest(
         url: URL?,
-        config: DetourConfig
+        config: PostedConfig
     ) -> URLRequest? {
         guard let url else { return nil }
 
@@ -24,7 +24,7 @@ enum AnalyticsNetwork {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(config.apiKey)", forHTTPHeaderField: "Authorization")
         request.setValue(config.appID, forHTTPHeaderField: "X-App-ID")
-        request.setValue(DetourConstants.sdkHeaderValue, forHTTPHeaderField: DetourConstants.sdkHeaderField)
+        request.setValue(PostedConstants.sdkHeaderValue, forHTTPHeaderField: PostedConstants.sdkHeaderField)
         return request
     }
 
@@ -38,7 +38,7 @@ enum AnalyticsNetwork {
     }
 
     private static func send(
-        config: DetourConfig,
+        config: PostedConfig,
         url: URL?,
         eventName: String,
         deviceID: String,
@@ -53,7 +53,7 @@ enum AnalyticsNetwork {
         }
 
         guard let bodyData = try? JSONSerialization.data(withJSONObject: body, options: []) else {
-            DetourLogger.warn(tag, "[Detour:ANALYTICS] Failed to encode \(kind) body.")
+            PostedLogger.warn(tag, "[Posted:ANALYTICS] Failed to encode \(kind) body.")
             return
         }
 
@@ -64,17 +64,17 @@ enum AnalyticsNetwork {
             guard let httpResponse = response as? HTTPURLResponse else { return }
 
             if !(200 ... 299).contains(httpResponse.statusCode) {
-                DetourLogger.warn(tag, "[Detour:ANALYTICS] \(kind) send failed: \(httpResponse.statusCode)")
+                PostedLogger.warn(tag, "[Posted:ANALYTICS] \(kind) send failed: \(httpResponse.statusCode)")
             }
         } catch {
-            DetourLogger.warn(tag, "[Detour:ANALYTICS] \(kind) send exception: \(error.localizedDescription)")
+            PostedLogger.warn(tag, "[Posted:ANALYTICS] \(kind) send exception: \(error.localizedDescription)")
         }
     }
 
-    static func sendEvent(config: DetourConfig, eventName: String, data: [String: Any]?, deviceID: String) async {
+    static func sendEvent(config: PostedConfig, eventName: String, data: [String: Any]?, deviceID: String) async {
         await send(
             config: config,
-            url: DetourConstants.analyticsEventUrl,
+            url: PostedConstants.analyticsEventUrl,
             eventName: eventName,
             deviceID: deviceID,
             data: data,
@@ -82,10 +82,10 @@ enum AnalyticsNetwork {
         )
     }
 
-    static func sendRetentionEvent(config: DetourConfig, eventName: String, deviceID: String) async {
+    static func sendRetentionEvent(config: PostedConfig, eventName: String, deviceID: String) async {
         await send(
             config: config,
-            url: DetourConstants.analyticsRetentionUrl,
+            url: PostedConstants.analyticsRetentionUrl,
             eventName: eventName,
             deviceID: deviceID,
             data: nil,
