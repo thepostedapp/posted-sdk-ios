@@ -146,8 +146,8 @@ public class Detour {
 
         Task {
             let fingerprint = await DeviceUtils.getFingerprint(shouldUseClipboard: config.shouldUseClipboard)
-            DetourNetwork.matchLink(config: config, fingerprint: fingerprint, linkType: .deferred) { [weak self] result in
-                Task { @MainActor in
+            DetourNetwork.matchLink(config: config, fingerprint: fingerprint, linkType: .deferred) { result in
+                Task { @MainActor [weak self] in
                     guard let self else {
                         completion(result)
                         return
