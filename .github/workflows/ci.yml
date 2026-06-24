@@ -15,8 +15,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: build SPM library for iOS
-        run: xcodebuild -scheme Detour -destination 'generic/platform=iOS' build
+        run: xcodebuild -scheme PostedSDK -destination 'generic/platform=iOS' build
       - name: validate podspec
         run: |
           sudo gem install cocoapods --no-document
-          pod lib lint Detour.podspec --allow-warnings
+          pod lib lint PostedSDK.podspec --allow-warnings
