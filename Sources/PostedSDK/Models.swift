@@ -1,6 +1,6 @@
 import Foundation
 
-public struct DetourConfig: Sendable {
+public struct PostedConfig: Sendable {
     public let apiKey: String
     public let appID: String
     public let shouldUseClipboard: Bool
@@ -31,7 +31,7 @@ public enum LinkType: String, Codable, Sendable {
     case scheme
 }
 
-public struct DetourLink: Sendable {
+public struct PostedLink: Sendable {
     public let url: String
     public let route: String
     public let pathname: String
@@ -72,11 +72,11 @@ struct LocaleTag: Codable {
     let languageTag: String
 }
 
-public struct DetourResult: Sendable {
+public struct PostedResult: Sendable {
     public let processed: Bool
-    public let link: DetourLink?
-    
-    public init(processed: Bool, link: DetourLink?) {
+    public let link: PostedLink?
+
+    public init(processed: Bool, link: PostedLink?) {
         self.processed = processed
         self.link = link
     }
@@ -87,7 +87,7 @@ public struct DetourResult: Sendable {
     public var params: [String: String] { link?.params ?? [:] }
     public var linkURL: URL? { link.flatMap { URL(string: $0.url) } }
 
-    public static func empty() -> DetourResult {
-        return DetourResult(processed: true, link: nil)
+    public static func empty() -> PostedResult {
+        return PostedResult(processed: true, link: nil)
     }
 }

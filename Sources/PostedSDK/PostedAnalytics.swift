@@ -1,8 +1,8 @@
 import Foundation
 
 @MainActor
-public final class DetourAnalytics {
-    public static let shared = DetourAnalytics()
+public final class PostedAnalytics {
+    public static let shared = PostedAnalytics()
 
     private var isMounted = false
     private var subscriptionToken: UUID?
@@ -10,7 +10,7 @@ public final class DetourAnalytics {
 
     private init() {}
 
-    public static func mount(config: DetourConfig) {
+    public static func mount(config: PostedConfig) {
         shared.mount(config: config)
     }
 
@@ -18,7 +18,7 @@ public final class DetourAnalytics {
         shared.unmount()
     }
 
-    public static func logEvent(_ eventName: DetourEventName, data: [String: Any]? = nil) {
+    public static func logEvent(_ eventName: PostedEventName, data: [String: Any]? = nil) {
         shared.logEvent(eventName, data: data)
     }
 
@@ -30,7 +30,7 @@ public final class DetourAnalytics {
         shared.logRetention(eventName)
     }
 
-    public func mount(config: DetourConfig) {
+    public func mount(config: PostedConfig) {
         guard !isMounted else { return }
         isMounted = true
 
@@ -74,7 +74,7 @@ public final class DetourAnalytics {
         AnalyticsEmitter.shared.unsubscribe(token)
     }
 
-    public func logEvent(_ eventName: DetourEventName, data: [String: Any]? = nil) {
+    public func logEvent(_ eventName: PostedEventName, data: [String: Any]? = nil) {
         logEvent(eventName.rawValue, data: data)
     }
 

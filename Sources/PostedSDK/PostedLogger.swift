@@ -4,8 +4,8 @@ import os.log
 import os
 #endif
 
-enum DetourLogger {
-    private static let subsystem = "com.swmansion.detour"
+enum PostedLogger {
+    private static let subsystem = "com.postedapp.posted"
 
     private enum Level {
         case debug

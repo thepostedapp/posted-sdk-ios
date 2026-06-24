@@ -103,10 +103,10 @@ class LinkUtils {
         return result
     }
 
-    static func makeDetourLink(from url: URL, type: LinkType) -> DetourLink {
+    static func makePostedLink(from url: URL, type: LinkType) -> PostedLink {
         let route = extractRoute(from: url)
         let pathname = route.split(separator: "?", maxSplits: 1, omittingEmptySubsequences: false).first.map(String.init) ?? route
-        return DetourLink(
+        return PostedLink(
             url: url.absoluteString,
             route: route,
             pathname: pathname.isEmpty ? "/" : pathname,
@@ -115,7 +115,7 @@ class LinkUtils {
         )
     }
 
-    static func makeDetourLink(fromPath rawPath: String, type: LinkType) -> DetourLink {
+    static func makePostedLink(fromPath rawPath: String, type: LinkType) -> PostedLink {
         let normalized = rawPath.hasPrefix("/") ? rawPath : "/\(rawPath)"
         let parts = normalized.split(separator: "?", maxSplits: 1, omittingEmptySubsequences: false).map(String.init)
         let fullPathname = parts.first ?? "/"
@@ -124,7 +124,7 @@ class LinkUtils {
         let pathname = getRestOfPath(fullPathname)
         let route = pathname + (query.map { "?\($0)" } ?? "")
 
-        return DetourLink(
+        return PostedLink(
             url: normalized,
             route: route,
             pathname: pathname,

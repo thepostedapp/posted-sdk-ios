@@ -1,24 +1,24 @@
 import Foundation
 
-class DetourNetwork {
-    private static let tag = "DetourApiClient"
+class PostedNetwork {
+    private static let tag = "PostedApiClient"
 
     private struct LinkResponse: Decodable {
         let link: String?
     }
 
-    private static func applyHeaders(to request: inout URLRequest, config: DetourConfig) {
+    private static func applyHeaders(to request: inout URLRequest, config: PostedConfig) {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(config.apiKey)", forHTTPHeaderField: "Authorization")
         request.setValue(config.appID, forHTTPHeaderField: "X-App-ID")
-        request.setValue(DetourConstants.sdkHeaderValue, forHTTPHeaderField: DetourConstants.sdkHeaderField)
+        request.setValue(PostedConstants.sdkHeaderValue, forHTTPHeaderField: PostedConstants.sdkHeaderField)
     }
 
     private static func logAndFail(
         _ message: String,
-        completion: @escaping @Sendable (DetourResult) -> Void
+        completion: @escaping @Sendable (PostedResult) -> Void
     ) {
-        DetourLogger.error(tag, "[Detour:NETWORK_ERROR] \(message)")
+        PostedLogger.error(tag, "[Posted:NETWORK_ERROR] \(message)")
 
         DispatchQueue.main.async {
             completion(.empty())
@@ -26,13 +26,14 @@ class DetourNetwork {
     }
 
     static func matchLink(
-        config: DetourConfig,
+        config: PostedConfig,
         fingerprint: ProbabilisticFingerprint,
         linkType: LinkType = .deferred,
-        completion: @escaping @Sendable (DetourResult) -> Void
+        session: URLSession = .shared,
+        completion: @escaping @Sendable (PostedResult) -> Void
     ) {
 
-        guard let apiUrl = DetourConstants.apiUrl else {
+        guard let apiUrl = PostedConstants.apiUrl else {
             logAndFail("Configuration Error: Invalid API URL", completion: completion)
             return
         }
@@ -50,9 +51,9 @@ class DetourNetwork {
         applyHeaders(to: &request, config: config)
         request.httpBody = httpBody
 
-        DetourLogger.debug(tag, "Sending fingerprint to API")
+        PostedLogger.debug(tag, "Sending fingerprint to API")
 
-        URLSession.shared.dataTask(with: request) { data, response, error in
+        session.dataTask(with: request) { data, response, error in
             handleResponse(
                 data: data,
                 response: response,
@@ -68,7 +69,7 @@ class DetourNetwork {
         response: URLResponse?,
         error: Error?,
         linkType: LinkType,
-        completion: @escaping @Sendable (DetourResult) -> Void
+        completion: @escaping @Sendable (PostedResult) -> Void
     ) {
         if let transportError = error {
             logAndFail("Network Error: \(transportError.localizedDescription)", completion: completion)
@@ -110,13 +111,13 @@ class DetourNetwork {
 
             if let linkString = response.link,
                let url = URL(string: linkString) {
-                DetourLogger.debug(tag, "Link matched successfully")
-                let detourLink = LinkUtils.makeDetourLink(from: url, type: linkType)
+                PostedLogger.debug(tag, "Link matched successfully")
+                let postedLink = LinkUtils.makePostedLink(from: url, type: linkType)
                 DispatchQueue.main.async {
-                    completion(DetourResult(processed: true, link: detourLink))
+                    completion(PostedResult(processed: true, link: postedLink))
                 }
             } else {
-                DetourLogger.debug(tag, "No matching link found")
+                PostedLogger.debug(tag, "No matching link found")
                 DispatchQueue.main.async { completion(.empty()) }
             }
         } catch {
@@ -124,9 +125,9 @@ class DetourNetwork {
         }
     }
 
-    static func resolveShortLink(config: DetourConfig, url: String) async -> URL? {
-        guard let endpoint = DetourConstants.resolveShortUrl else {
-            DetourLogger.warn(tag, "[Detour:NETWORK_ERROR] Short link resolution failed: invalid endpoint")
+    static func resolveShortLink(config: PostedConfig, url: String, session: URLSession = .shared) async -> URL? {
+        guard let endpoint = PostedConstants.resolveShortUrl else {
+            PostedLogger.warn(tag, "[Posted:NETWORK_ERROR] Short link resolution failed: invalid endpoint")
             return nil
         }
 
@@ -142,11 +143,11 @@ class DetourNetwork {
         request.httpBody = requestBody
 
         do {
-            let (data, response) = try await URLSession.shared.data(for: request)
+            let (data, response) = try await session.data(for: request)
             guard let httpResponse = response as? HTTPURLResponse else { return nil }
             if httpResponse.statusCode == 404 { return nil }
             guard (200 ... 299).contains(httpResponse.statusCode) else {
-                DetourLogger.warn(tag, "[Detour:NETWORK_ERROR] Short link resolution failed: \(httpResponse.statusCode)")
+                PostedLogger.warn(tag, "[Posted:NETWORK_ERROR] Short link resolution failed: \(httpResponse.statusCode)")
                 return nil
             }
 
@@ -161,10 +162,10 @@ class DetourNetwork {
                 return nil
             }
 
-            DetourLogger.debug(tag, "Short link resolved successfully")
+            PostedLogger.debug(tag, "Short link resolved successfully")
             return resolvedURL
         } catch {
-            DetourLogger.warn(tag, "[Detour:NETWORK_ERROR] Short link resolution exception: \(error.localizedDescription)")
+            PostedLogger.warn(tag, "[Posted:NETWORK_ERROR] Short link resolution exception: \(error.localizedDescription)")
             return nil
         }
     }
@@ -179,8 +180,8 @@ class DetourNetwork {
         }
     }
 
-    static func sendUniversalLinkClick(config: DetourConfig, url: String, linkId: String? = nil) async -> (allowed: Bool, clickId: String?) {
-        guard let endpoint = DetourConstants.universalLinkClickUrl else {
+    static func sendUniversalLinkClick(config: PostedConfig, url: String, linkId: String? = nil, session: URLSession = .shared) async -> (allowed: Bool, clickId: String?) {
+        guard let endpoint = PostedConstants.universalLinkClickUrl else {
             return (allowed: true, clickId: nil)  // fail-open
         }
 
@@ -254,16 +255,16 @@ class DetourNetwork {
         request.httpBody = body
 
         do {
-            let (data, response) = try await URLSession.shared.data(for: request)
+            let (data, response) = try await session.data(for: request)
             guard let http = response as? HTTPURLResponse else { return (allowed: true, clickId: nil) }
 
             let decoded = try? JSONDecoder().decode(ResponseBody.self, from: data)
             let isExplicitDeny = decoded?.allowed == false || http.statusCode == 402
 
             if isExplicitDeny {
-                DetourLogger.error(
+                PostedLogger.error(
                     tag,
-                    "[Detour:CLICK_LIMIT_ERROR] Universal link blocked: url=\(url) error=\(decoded?.error ?? "limit exceeded") code=\(decoded?.code ?? "n/a") clicksInPeriod=\(decoded?.clicksInPeriod.map(String.init) ?? "n/a") effectiveLimit=\(decoded?.effectiveLimit.map(String.init) ?? "n/a")"
+                    "[Posted:CLICK_LIMIT_ERROR] Universal link blocked: url=\(url) error=\(decoded?.error ?? "limit exceeded") code=\(decoded?.code ?? "n/a") clicksInPeriod=\(decoded?.clicksInPeriod.map(String.init) ?? "n/a") effectiveLimit=\(decoded?.effectiveLimit.map(String.init) ?? "n/a")"
                 )
                 return (allowed: false, clickId: nil)
             }

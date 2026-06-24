@@ -1,6 +1,6 @@
 import UIKit
 import SwiftUI
-import Detour
+import PostedSDK
 import os
 
 @main
@@ -9,9 +9,9 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
 
     private let logger = Logger(subsystem: "<YOUR_BUNDLE_IDENTIFIER>", category: "AppDelegate")
 
-    private let detourConfig = DetourConfig(
-        apiKey: "<YOUR_DETOUR_API_KEY>",
-        appID: "<YOUR_DETOUR_APP_ID>",
+    private let postedConfig = PostedConfig(
+        apiKey: "<YOUR_POSTED_API_KEY>",
+        appID: "<YOUR_POSTED_APP_ID>",
         shouldUseClipboard: false,
         linkProcessingMode: .all
     )
@@ -28,10 +28,10 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         self.window = window
 
         // Mount analytics once at startup.
-        Detour.shared.mountAnalytics(config: detourConfig)
+        Posted.shared.mountAnalytics(config: postedConfig)
 
         // Resolve initial deferred/universal link.
-        Detour.shared.resolveInitialLink(config: detourConfig, launchOptions: launchOptions) { result in
+        Posted.shared.resolveInitialLink(config: postedConfig, launchOptions: launchOptions) { result in
             if let route = result.route {
                 self.logger.info("Initial route: \(route)")
             } else {
@@ -54,7 +54,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         options: [UIApplication.OpenURLOptionsKey: Any] = [:]
     ) -> Bool {
         Task { @MainActor in
-            let result = await Detour.shared.processLink(url, config: detourConfig)
+            let result = await Posted.shared.processLink(url, config: postedConfig)
             DetourDemoState.shared.recordLinkResult(result, source: "custom_scheme")
         }
 
@@ -73,7 +73,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         }
 
         Task { @MainActor in
-            let result = await Detour.shared.processLink(url, config: detourConfig)
+            let result = await Posted.shared.processLink(url, config: postedConfig)
             DetourDemoState.shared.recordLinkResult(result, source: "universal_link")
         }
 

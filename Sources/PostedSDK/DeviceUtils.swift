@@ -14,13 +14,13 @@ class DeviceUtils {
 
             webView?.evaluateJavaScript("navigator.userAgent") { result, error in
                 if let error = error {
-                    DetourLogger.warn(tag, "[Detour:FINGERPRINT] WebKit userAgent retrieval failed: \(error.localizedDescription)")
+                    PostedLogger.warn(tag, "[Posted:FINGERPRINT] WebKit userAgent retrieval failed: \(error.localizedDescription)")
                 }
 
                 if let ua = result as? String {
                     continuation.resume(returning: ua)
                 } else {
-                    DetourLogger.warn(tag, "[Detour:FINGERPRINT] WebKit userAgent result was nil")
+                    PostedLogger.warn(tag, "[Posted:FINGERPRINT] WebKit userAgent result was nil")
                     continuation.resume(returning: "")
                 }
 

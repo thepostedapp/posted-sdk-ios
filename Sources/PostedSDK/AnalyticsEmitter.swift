@@ -4,7 +4,7 @@ typealias AnalyticsListener = (AnalyticsEventPayload) -> Void
 
 @MainActor
 final class AnalyticsEmitter {
-    private static let tag = "DetourAnalytics"
+    private static let tag = "PostedAnalytics"
 
     static let shared = AnalyticsEmitter()
 
@@ -26,7 +26,7 @@ final class AnalyticsEmitter {
         let snapshot = Array(listeners.values)
 
         if snapshot.isEmpty {
-            DetourLogger.warn(Self.tag, "[Detour:ANALYTICS] Analytics not initialized - call mount(config:) first")
+            PostedLogger.warn(Self.tag, "[Posted:ANALYTICS] Analytics not initialized - call mount(config:) first")
             return
         }
 
