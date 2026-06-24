@@ -18,5 +18,10 @@ let package = Package(
         .target(
             name: "PostedSDK"
         ),
+        .testTarget(
+            name: "PostedSDKTests",
+            dependencies: ["PostedSDK"],
+            path: "Tests/PostedSDKTests"
+        ),
     ]
 )

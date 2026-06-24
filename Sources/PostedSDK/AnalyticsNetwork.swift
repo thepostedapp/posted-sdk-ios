@@ -43,7 +43,8 @@ enum AnalyticsNetwork {
         eventName: String,
         deviceID: String,
         data: [String: Any]?,
-        kind: String
+        kind: String,
+        session: URLSession = .shared
     ) async {
         guard var request = baseRequest(url: url, config: config) else { return }
 
@@ -60,7 +61,7 @@ enum AnalyticsNetwork {
         request.httpBody = bodyData
 
         do {
-            let (_, response) = try await URLSession.shared.data(for: request)
+            let (_, response) = try await session.data(for: request)
             guard let httpResponse = response as? HTTPURLResponse else { return }
 
             if !(200 ... 299).contains(httpResponse.statusCode) {
@@ -71,25 +72,27 @@ enum AnalyticsNetwork {
         }
     }
 
-    static func sendEvent(config: PostedConfig, eventName: String, data: [String: Any]?, deviceID: String) async {
+    static func sendEvent(config: PostedConfig, eventName: String, data: [String: Any]?, deviceID: String, session: URLSession = .shared) async {
         await send(
             config: config,
             url: PostedConstants.analyticsEventUrl,
             eventName: eventName,
             deviceID: deviceID,
             data: data,
-            kind: "event"
+            kind: "event",
+            session: session
         )
     }
 
-    static func sendRetentionEvent(config: PostedConfig, eventName: String, deviceID: String) async {
+    static func sendRetentionEvent(config: PostedConfig, eventName: String, deviceID: String, session: URLSession = .shared) async {
         await send(
             config: config,
             url: PostedConstants.analyticsRetentionUrl,
             eventName: eventName,
             deviceID: deviceID,
             data: nil,
-            kind: "retention event"
+            kind: "retention event",
+            session: session
         )
     }
 }
