@@ -1,6 +1,6 @@
 import Foundation
 import Combine
-import Detour
+import PostedSDK
 
 @MainActor
 final class DetourDemoState: ObservableObject {
@@ -13,7 +13,7 @@ final class DetourDemoState: ObservableObject {
 
     private init() {}
 
-    func recordLinkResult(_ result: DetourResult, source: String) {
+    func recordLinkResult(_ result: PostedResult, source: String) {
         if let route = result.route {
             lastRoute = route
         }

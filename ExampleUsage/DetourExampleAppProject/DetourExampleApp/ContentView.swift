@@ -1,5 +1,5 @@
 import SwiftUI
-import Detour
+import PostedSDK
 
 struct ContentView: View {
     @ObservedObject private var demoState = DetourDemoState.shared
@@ -10,7 +10,7 @@ struct ContentView: View {
                 VStack(spacing: 12) {
                     ProgressView()
                         .controlSize(.large)
-                    Text("Resolving Detour link...")
+                    Text("Resolving link...")
                         .font(.headline)
                     Text("Please wait")
                         .foregroundStyle(.secondary)
@@ -20,7 +20,7 @@ struct ContentView: View {
             } else {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {
-                        Text("Detour ExampleUsage Template")
+                        Text("PostedSDK ExampleUsage Template")
                             .font(.title)
                             .bold()
 
@@ -45,17 +45,17 @@ struct ContentView: View {
                             .font(.headline)
 
                         Button("Log typed event: add_to_cart") {
-                            DetourAnalytics.logEvent(.addToCart, data: ["sku": "example-sku", "price": 129.0])
+                            PostedAnalytics.logEvent(.addToCart, data: ["sku": "example-sku", "price": 129.0])
                             demoState.appendLog("[analytics] add_to_cart logged")
                         }
 
                         Button("Log custom event") {
-                            DetourAnalytics.logEvent("promo_banner_tap", data: ["placement": "home_top"])
+                            PostedAnalytics.logEvent("promo_banner_tap", data: ["placement": "home_top"])
                             demoState.appendLog("[analytics] promo_banner_tap logged")
                         }
 
                         Button("Log retention event") {
-                            DetourAnalytics.logRetention("day_7_return")
+                            PostedAnalytics.logRetention("day_7_return")
                             demoState.appendLog("[analytics] day_7_return retention logged")
                         }
 
