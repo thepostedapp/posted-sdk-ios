@@ -1,6 +1,13 @@
 import Foundation
 import UIKit
 
+/// Represents the iOS-specific context that describes how the app was launched.
+/// Pass the value received in `application(_:didFinishLaunchingWithOptions:)` or
+/// `scene(_:willConnectTo:options:)` so the SDK can pick the correct attribution branch.
+public enum LaunchContext: @unchecked Sendable {
+    case launchOptions([UIApplication.LaunchOptionsKey: Any]?)
+    case connectionOptions(UIScene.ConnectionOptions)
+}
 
 @MainActor
 public class Posted {
@@ -23,6 +30,7 @@ public class Posted {
 
     public func resetSession(allowDeferredRetry: Bool = false) {
         isSessionHandled = false
+        StorageUtils.clearAttributionResolved()
         PostedLogger.debug(tag, "Session reset")
         if allowDeferredRetry {
             StorageUtils.resetFirstEntrance()
@@ -49,7 +57,8 @@ public class Posted {
         _ rawLink: String,
         config: PostedConfig?,
         typeOverride: LinkType? = nil,
-        visitedShortLinks: Set<String> = []
+        visitedShortLinks: Set<String> = [],
+        session: URLSession = .shared
     ) async -> PostedLink? {
         if LinkUtils.isInfrastructureUrl(rawLink) {
             PostedLogger.debug(tag, "Ignored infrastructure URL: \(rawLink)")
@@ -97,13 +106,14 @@ public class Posted {
                 var visited = visitedShortLinks
                 visited.insert(normalized)
 
-                if let resolvedUrl = await PostedNetwork.resolveShortLink(config: config, url: rawLink) {
+                if let resolvedUrl = await PostedNetwork.resolveShortLink(config: config, url: rawLink, session: session) {
                     let normalizedResolved = LinkUtils.normalizeRawLink(resolvedUrl.absoluteString)
                     if !visited.contains(normalizedResolved) {
                         return await resolveLink(
                             normalizedResolved,
                             config: config,
-                            visitedShortLinks: visited
+                            visitedShortLinks: visited,
+                            session: session
                         )
                     }
                 }
@@ -319,6 +329,115 @@ public class Posted {
 
         PostedLogger.debug(tag, "Falling back to deferred link resolution")
         resolveDeferredInitialLink(config: config, completion: completion)
+    }
+
+    // MARK: - resolveAppLaunch (3.0.0 facade)
+
+    /// Resolves attribution exactly once per install, returning a cached result on subsequent calls.
+    ///
+    /// Pass the `launchContext` from your app/scene delegate so the SDK can choose the correct
+    /// internal branch: link-present (universal / scheme URL) or deferred (probabilistic match).
+    /// Omit `launchContext` when the launch carries no URL (deferred-only scenarios).
+    public func resolveAppLaunch(
+        config: PostedConfig,
+        launchContext: LaunchContext? = nil
+    ) async -> PostedResult {
+        await _resolveAppLaunch(config: config, launchContext: launchContext, session: .shared)
+    }
+
+    func _resolveAppLaunch(
+        config: PostedConfig,
+        launchContext: LaunchContext? = nil,
+        session: URLSession
+    ) async -> PostedResult {
+        mountAnalytics(config: config)
+
+        if StorageUtils.isAttributionResolved(),
+           let cached = StorageUtils.getCachedAttributionResult() {
+            PostedLogger.debug(tag, "resolveAppLaunch: fire-once hit, returning cached result")
+            return cached
+        }
+
+        let launchURL = extractLaunchURL(from: launchContext, config: config)
+
+        let result: PostedResult
+        if let url = launchURL {
+            PostedLogger.debug(tag, "resolveAppLaunch: link-present branch")
+            result = await resolveLinkPresent(url: url, config: config, session: session)
+        } else {
+            PostedLogger.debug(tag, "resolveAppLaunch: deferred branch")
+            result = await resolveAppLaunchDeferred(config: config, session: session)
+        }
+
+        StorageUtils.markAttributionResolved(result: result)
+        return result
+    }
+
+    private func extractLaunchURL(from launchContext: LaunchContext?, config: PostedConfig) -> URL? {
+        guard config.linkProcessingMode != .deferredOnly else { return nil }
+
+        switch launchContext {
+        case .launchOptions(let options):
+            if let url = options?[.url] as? URL,
+               !LinkUtils.isInfrastructureUrl(url.absoluteString) {
+                return url
+            }
+            return browsingWebActivities(from: options)
+                .compactMap(\.webpageURL)
+                .first { !LinkUtils.isInfrastructureUrl($0.absoluteString) }
+
+        case .connectionOptions(let connOptions):
+            if let url = connOptions.urlContexts.first?.url,
+               !LinkUtils.isInfrastructureUrl(url.absoluteString) {
+                return url
+            }
+            return browsingWebActivities(from: connOptions)
+                .compactMap(\.webpageURL)
+                .first { !LinkUtils.isInfrastructureUrl($0.absoluteString) }
+
+        case .none:
+            return nil
+        }
+    }
+
+    private func resolveLinkPresent(url: URL, config: PostedConfig, session: URLSession) async -> PostedResult {
+        if LinkUtils.detectLinkType(from: url) == .verified {
+            let clickResult = await PostedNetwork.sendUniversalLinkClick(
+                config: config,
+                url: url.absoluteString,
+                session: session
+            )
+            if !clickResult.allowed { return .empty() }
+        }
+        let resolved = await resolveLink(url.absoluteString, config: config, session: session)
+        return PostedResult(processed: true, link: resolved)
+    }
+
+    private func resolveAppLaunchDeferred(config: PostedConfig, session: URLSession) async -> PostedResult {
+        PostedLogger.debug(tag, "Using probabilistic matching")
+        let fingerprint = await DeviceUtils.getFingerprint(shouldUseClipboard: config.shouldUseClipboard)
+        return await withCheckedContinuation { [weak self] continuation in
+            PostedNetwork.matchLink(
+                config: config,
+                fingerprint: fingerprint,
+                linkType: .deferred,
+                session: session
+            ) { result in
+                Task { @MainActor [weak self] in
+                    guard let self else {
+                        continuation.resume(returning: result)
+                        return
+                    }
+                    let filtered = self.filterNonWebUrlLikeLinks(result, mode: config.linkProcessingMode)
+                    if filtered.link == nil {
+                        PostedLogger.debug(self.tag, "resolveAppLaunch: no deferred link matched")
+                    } else {
+                        PostedLogger.debug(self.tag, "resolveAppLaunch: deferred link matched")
+                    }
+                    continuation.resume(returning: filtered)
+                }
+            }
+        }
     }
 
 }
