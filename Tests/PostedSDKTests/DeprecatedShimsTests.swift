@@ -25,10 +25,11 @@ final class DeprecatedShimsTests: XCTestCase {
     }
 
     func testProcessLinkSyncInfraUrlReturnsEmpty() {
-        // godetour.dev is an infrastructure URL; processLink must ignore it.
-        let url = URL(string: "https://godetour.dev/some/path")!
+        // "about:blank" is the infrastructure URL string recognised by isInfrastructureUrl.
+        // processLink must return .empty() — processed: true (always), link: nil.
+        guard let url = URL(string: "about:blank") else { return }
         let result = Posted.shared.processLink(url)
-        XCTAssertFalse(result.processed)
+        XCTAssertTrue(result.processed)
         XCTAssertNil(result.link)
     }
 
