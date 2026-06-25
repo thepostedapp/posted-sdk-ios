@@ -416,7 +416,7 @@ public class Posted {
     private func resolveAppLaunchDeferred(config: PostedConfig, session: URLSession) async -> PostedResult {
         PostedLogger.debug(tag, "Using probabilistic matching")
         let fingerprint = await DeviceUtils.getFingerprint(shouldUseClipboard: config.shouldUseClipboard)
-        return await withCheckedContinuation { [weak self] continuation in
+        return await withCheckedContinuation { continuation in
             PostedNetwork.matchLink(
                 config: config,
                 fingerprint: fingerprint,
