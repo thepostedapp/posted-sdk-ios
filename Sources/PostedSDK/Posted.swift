@@ -13,7 +13,6 @@ public enum LaunchContext: @unchecked Sendable {
 public class Posted {
     public static let shared = Posted()
 
-    private var isSessionHandled = false
     private let tag = "Posted"
 
     private init() {
@@ -29,7 +28,6 @@ public class Posted {
     }
 
     public func resetSession(allowDeferredRetry: Bool = false) {
-        isSessionHandled = false
         StorageUtils.clearAttributionResolved()
         PostedLogger.debug(tag, "Session reset")
         if allowDeferredRetry {
@@ -140,45 +138,10 @@ public class Posted {
         connectionOptions.userActivities.filter { $0.activityType == NSUserActivityTypeBrowsingWeb }
     }
 
-    private func resolveDeferredInitialLink(
-        config: PostedConfig,
-        completion: @escaping @Sendable (PostedResult) -> Void
-    ) {
-        if !StorageUtils.isFirstEntrance() {
-            PostedLogger.debug(tag, "Not first launch")
-            isSessionHandled = true
-            completion(.empty())
-            return
-        }
-
-        StorageUtils.markFirstEntrance()
-        isSessionHandled = true
-        PostedLogger.debug(tag, "First launch detected, processing deferred link")
-        PostedLogger.debug(tag, "Using probabilistic matching")
-
-        Task {
-            let fingerprint = await DeviceUtils.getFingerprint(shouldUseClipboard: config.shouldUseClipboard)
-            PostedNetwork.matchLink(config: config, fingerprint: fingerprint, linkType: .deferred) { result in
-                Task { @MainActor [weak self] in
-                    guard let self else {
-                        completion(result)
-                        return
-                    }
-
-                    let filteredResult = self.filterNonWebUrlLikeLinks(result, mode: config.linkProcessingMode)
-                    if filteredResult.link == nil {
-                        PostedLogger.debug(self.tag, "No deferred link matched")
-                    } else {
-                        PostedLogger.debug(self.tag, "Deferred link matched successfully")
-                    }
-                    completion(filteredResult)
-                }
-            }
-        }
-    }
-
     // Converts a URL into a PostedResult with a parsed route.
+    @available(*, deprecated, renamed: "resolveAppLaunch")
     public func processLink(_ url: URL) -> PostedResult {
+        PostedLogger.warn(tag, "[Deprecated] processLink(_:) — migrate to resolveAppLaunch(config:launchContext:)")
         if LinkUtils.isInfrastructureUrl(url.absoluteString) {
             PostedLogger.debug(tag, "Ignored infrastructure URL: \(url.absoluteString)")
             return .empty()
@@ -198,7 +161,9 @@ public class Posted {
     }
 
     // Processes URL and optionally resolves web short-links when config is provided.
+    @available(*, deprecated, renamed: "resolveAppLaunch")
     public func processLink(_ url: URL, config: PostedConfig?) async -> PostedResult {
+        PostedLogger.warn(tag, "[Deprecated] processLink(_:config:) — migrate to resolveAppLaunch(config:launchContext:)")
         if LinkUtils.detectLinkType(from: url) == .verified, let config {
             let clickResult = await PostedNetwork.sendUniversalLinkClick(config: config, url: url.absoluteString)
             if !clickResult.allowed {
@@ -210,7 +175,9 @@ public class Posted {
 
     // Converts a raw link string into a PostedResult with route and link type.
     // If config is provided, web short-links are resolved before parsing.
+    @available(*, deprecated, renamed: "resolveAppLaunch")
     public func processLink(_ rawLink: String, config: PostedConfig? = nil) async -> PostedResult {
+        PostedLogger.warn(tag, "[Deprecated] processLink(_:config:) — migrate to resolveAppLaunch(config:launchContext:)")
         let resolvedLink = await resolveLink(rawLink, config: config)
         if resolvedLink == nil {
             PostedLogger.debug(tag, "No matching link found")
@@ -218,117 +185,30 @@ public class Posted {
         return PostedResult(processed: true, link: resolvedLink)
     }
 
+    @available(*, deprecated, renamed: "resolveAppLaunch")
     public func resolveInitialLink(
-            config: PostedConfig,
-            launchOptions: [UIApplication.LaunchOptionsKey: Any]?,
-            completion: @escaping @Sendable (PostedResult) -> Void
-        ) {
-            mountAnalytics(config: config)
-
-            func returnEmpty() { completion(.empty()) }
-
-            if isSessionHandled {
-                PostedLogger.debug(tag, "Session already handled")
-                returnEmpty()
-                return
-            }
-
-            if config.linkProcessingMode != .deferredOnly {
-                if let launchURL = launchOptions?[.url] as? URL,
-                   !LinkUtils.isInfrastructureUrl(launchURL.absoluteString)
-                {
-                    PostedLogger.debug(tag, "Processing launch URL")
-                    StorageUtils.markFirstEntrance()
-                    isSessionHandled = true
-                    Task {
-                        let result = await processLink(launchURL.absoluteString, config: config)
-                        completion(result)
-                    }
-                    return
-                }
-
-                let activities = browsingWebActivities(from: launchOptions)
-                if let universalURL = activities.compactMap(\.webpageURL).first,
-                   !LinkUtils.isInfrastructureUrl(universalURL.absoluteString)
-                {
-                    PostedLogger.debug(tag, "Processing Universal Link")
-                    StorageUtils.markFirstEntrance()
-                    isSessionHandled = true
-                    Task {
-                        let result = await processLink(universalURL, config: config)
-                        completion(result)
-                    }
-                    return
-                }
-
-                if !activities.isEmpty {
-                    PostedLogger.debug(tag, "Universal Link userActivity detected - awaiting continueUserActivity callback")
-                    StorageUtils.markFirstEntrance()
-                    isSessionHandled = true
-                    // UIApplicationDelegate will invoke continueUserActivity next.
-                    returnEmpty()
-                    return
-                }
-            }
-
-            PostedLogger.debug(tag, "Falling back to deferred link resolution")
-            resolveDeferredInitialLink(config: config, completion: completion)
+        config: PostedConfig,
+        launchOptions: [UIApplication.LaunchOptionsKey: Any]?,
+        completion: @escaping @Sendable (PostedResult) -> Void
+    ) {
+        PostedLogger.warn(tag, "[Deprecated] resolveInitialLink — migrate to resolveAppLaunch(config:launchContext:)")
+        Task {
+            let result = await resolveAppLaunch(config: config, launchContext: .launchOptions(launchOptions))
+            completion(result)
         }
+    }
 
+    @available(*, deprecated, renamed: "resolveAppLaunch")
     public func resolveInitialLink(
         config: PostedConfig,
         connectionOptions: UIScene.ConnectionOptions,
         completion: @escaping @Sendable (PostedResult) -> Void
     ) {
-        mountAnalytics(config: config)
-
-        func returnEmpty() { completion(.empty()) }
-
-        if isSessionHandled {
-            PostedLogger.debug(tag, "Session already handled")
-            returnEmpty()
-            return
+        PostedLogger.warn(tag, "[Deprecated] resolveInitialLink — migrate to resolveAppLaunch(config:launchContext:)")
+        Task {
+            let result = await resolveAppLaunch(config: config, launchContext: .connectionOptions(connectionOptions))
+            completion(result)
         }
-
-        if config.linkProcessingMode != .deferredOnly {
-            if let openURL = connectionOptions.urlContexts.first?.url,
-               !LinkUtils.isInfrastructureUrl(openURL.absoluteString)
-            {
-                PostedLogger.debug(tag, "Processing launch URL")
-                StorageUtils.markFirstEntrance()
-                isSessionHandled = true
-                Task {
-                    let result = await processLink(openURL.absoluteString, config: config)
-                    completion(result)
-                }
-                return
-            }
-
-            let activities = browsingWebActivities(from: connectionOptions)
-            if let universalURL = activities.compactMap(\.webpageURL).first,
-               !LinkUtils.isInfrastructureUrl(universalURL.absoluteString)
-            {
-                PostedLogger.debug(tag, "Processing Universal Link")
-                StorageUtils.markFirstEntrance()
-                isSessionHandled = true
-                Task {
-                    let result = await processLink(universalURL, config: config)
-                    completion(result)
-                }
-                return
-            }
-
-            if !activities.isEmpty {
-                PostedLogger.debug(tag, "Universal Link userActivity detected - awaiting continue callback")
-                StorageUtils.markFirstEntrance()
-                isSessionHandled = true
-                returnEmpty()
-                return
-            }
-        }
-
-        PostedLogger.debug(tag, "Falling back to deferred link resolution")
-        resolveDeferredInitialLink(config: config, completion: completion)
     }
 
     // MARK: - resolveAppLaunch (3.0.0 facade)
