@@ -31,7 +31,7 @@ public enum LinkType: String, Codable, Sendable {
     case scheme
 }
 
-public struct PostedLink: Sendable {
+public struct PostedLink: Sendable, Codable {
     public let url: String
     public let route: String
     public let pathname: String
@@ -72,7 +72,7 @@ struct LocaleTag: Codable {
     let languageTag: String
 }
 
-public struct PostedResult: Sendable {
+public struct PostedResult: Sendable, Codable {
     public let processed: Bool
     public let link: PostedLink?
 
