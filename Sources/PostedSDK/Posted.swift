@@ -14,6 +14,7 @@ public class Posted {
     public static let shared = Posted()
 
     private var isSessionHandled = false
+    private var inFlightResolutionTask: Task<PostedResult, Never>?
     private let tag = "Posted"
 
     private init() {
@@ -30,6 +31,7 @@ public class Posted {
 
     public func resetSession(allowDeferredRetry: Bool = false) {
         isSessionHandled = false
+        inFlightResolutionTask = nil
         StorageUtils.clearAttributionResolved()
         PostedLogger.debug(tag, "Session reset")
         if allowDeferredRetry {
@@ -358,19 +360,31 @@ public class Posted {
             return cached
         }
 
-        let launchURL = extractLaunchURL(from: launchContext, config: config)
-
-        let result: PostedResult
-        if let url = launchURL {
-            PostedLogger.debug(tag, "resolveAppLaunch: link-present branch")
-            result = await resolveLinkPresent(url: url, config: config, session: session)
-        } else {
-            PostedLogger.debug(tag, "resolveAppLaunch: deferred branch")
-            result = await resolveAppLaunchDeferred(config: config, session: session)
+        // De-dup concurrent first-launch calls: if resolution is in-flight, await the same Task
+        // so exactly one network call is made regardless of how many callers race on first launch.
+        if let existing = inFlightResolutionTask {
+            PostedLogger.debug(tag, "resolveAppLaunch: de-dup, awaiting in-flight resolution")
+            return await existing.value
         }
 
-        StorageUtils.markAttributionResolved(result: result)
-        return result
+        let launchURL = extractLaunchURL(from: launchContext, config: config)
+
+        let task = Task<PostedResult, Never> { [weak self] in
+            guard let self else { return .empty() }
+            let result: PostedResult
+            if let url = launchURL {
+                PostedLogger.debug(self.tag, "resolveAppLaunch: link-present branch")
+                result = await self.resolveLinkPresent(url: url, config: config, session: session)
+            } else {
+                PostedLogger.debug(self.tag, "resolveAppLaunch: deferred branch")
+                result = await self.resolveAppLaunchDeferred(config: config, session: session)
+            }
+            StorageUtils.markAttributionResolved(result: result)
+            return result
+        }
+        inFlightResolutionTask = task
+        defer { inFlightResolutionTask = nil }
+        return await task.value
     }
 
     private func extractLaunchURL(from launchContext: LaunchContext?, config: PostedConfig) -> URL? {

@@ -96,6 +96,24 @@ final class ResolveAppLaunchTests: XCTestCase {
         XCTAssertEqual(first.link?.url, second.link?.url, "Second call must return the same cached result")
     }
 
+    // MARK: - Concurrent first-launch de-dup
+
+    func testConcurrentFirstLaunchProducesExactlyOneNetworkCall() async throws {
+        StubURLProtocol.responseData = #"{"link":"https://example.com/promo"}"#.data(using: .utf8)!
+
+        // Fire two concurrent resolutions before the fire-once flag is persisted.
+        async let first = Posted.shared._resolveAppLaunch(config: config, launchContext: nil, session: session)
+        async let second = Posted.shared._resolveAppLaunch(config: config, launchContext: nil, session: session)
+
+        let (result1, result2) = await (first, second)
+
+        XCTAssertEqual(
+            StubURLProtocol.requestCallCount[Self.matchLinkURL], 1,
+            "Concurrent first-launch calls must produce exactly one network call"
+        )
+        XCTAssertEqual(result1.link?.url, result2.link?.url, "Both concurrent calls must return identical results")
+    }
+
     // MARK: - Re-arm via resetSession
 
     func testResetSessionRearmsFireOnce() async throws {
