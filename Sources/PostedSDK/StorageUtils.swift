@@ -13,6 +13,14 @@ class StorageUtils {
         static let legacyDeviceIDKey = "Detour_deviceId"
     }
 
+    // Versioned envelope for the cached PostedResult.
+    // On schema version mismatch getCachedAttributionResult returns nil (drop + re-resolve).
+    private struct CachedAttribution: Codable {
+        static let currentVersion = 1
+        let schemaVersion: Int
+        let result: PostedResult
+    }
+
     static func isFirstEntrance() -> Bool {
         return !UserDefaults.standard.bool(forKey: Constants.firstEntranceKey)
     }
@@ -33,14 +41,19 @@ class StorageUtils {
 
     static func getCachedAttributionResult() -> PostedResult? {
         guard let data = UserDefaults.standard.data(forKey: Constants.cachedAttributionResultKey) else { return nil }
-        return try? JSONDecoder().decode(PostedResult.self, from: data)
+        guard let envelope = try? JSONDecoder().decode(CachedAttribution.self, from: data),
+              envelope.schemaVersion == CachedAttribution.currentVersion else {
+            return nil
+        }
+        return envelope.result
     }
 
+    // Stores result then sets the resolved flag — flag is never set without a decodable cached blob.
     static func markAttributionResolved(result: PostedResult) {
+        let envelope = CachedAttribution(schemaVersion: CachedAttribution.currentVersion, result: result)
+        guard let data = try? JSONEncoder().encode(envelope) else { return }
+        UserDefaults.standard.set(data, forKey: Constants.cachedAttributionResultKey)
         UserDefaults.standard.set(true, forKey: Constants.attributionResolvedKey)
-        if let data = try? JSONEncoder().encode(result) {
-            UserDefaults.standard.set(data, forKey: Constants.cachedAttributionResultKey)
-        }
     }
 
     static func clearAttributionResolved() {

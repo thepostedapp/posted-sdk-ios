@@ -1,4 +1,4 @@
-// Tests for resolveAppLaunch: two-branch dispatch + fire-once + re-arm (POS-125).
+// Tests for resolveAppLaunch: two-branch dispatch + fire-once + re-arm (POS-125/POS-140).
 import XCTest
 @testable import PostedSDK
 
@@ -117,6 +117,74 @@ final class ResolveAppLaunchTests: XCTestCase {
         XCTAssertNotNil(
             StubURLProtocol.capturedRequests[Self.matchLinkURL],
             "After resetSession, resolveAppLaunch must perform a fresh network call"
+        )
+    }
+
+    // MARK: - Defensive fire-once persistence (POS-140)
+
+    func testFlagAndCacheConsistentAfterResolution() async throws {
+        StubURLProtocol.responseData = #"{"link":"https://example.com/promo"}"#.data(using: .utf8)!
+
+        _ = await Posted.shared._resolveAppLaunch(config: config, launchContext: nil, session: session)
+
+        XCTAssertTrue(StorageUtils.isAttributionResolved(), "Flag must be set after resolution")
+        let cached = StorageUtils.getCachedAttributionResult()
+        XCTAssertNotNil(cached, "Cache must be decodable after resolution (flag never set without decodable blob)")
+        XCTAssertTrue(cached?.processed == true)
+        XCTAssertNotNil(cached?.link)
+    }
+
+    func testCacheVersionMismatchReturnsNilAndCausesReResolution() async throws {
+        // Write an old-version envelope directly to UserDefaults.
+        let oldVersionJSON = #"{"schemaVersion":0,"result":{"processed":true,"link":null}}"#
+        UserDefaults.standard.set(
+            oldVersionJSON.data(using: .utf8)!,
+            forKey: "PostedCachedAttributionResult"
+        )
+        UserDefaults.standard.set(true, forKey: "PostedAttributionResolved")
+
+        // getCachedAttributionResult must return nil on version mismatch.
+        XCTAssertNil(
+            StorageUtils.getCachedAttributionResult(),
+            "Version mismatch must return nil (safe drop, not crash)"
+        )
+
+        // Even though flag is true, resolveAppLaunch re-resolves when cache is nil.
+        StubURLProtocol.responseData = #"{"link":"https://example.com/new"}"#.data(using: .utf8)!
+        let result = await Posted.shared._resolveAppLaunch(config: config, launchContext: nil, session: session)
+
+        XCTAssertNotNil(
+            StubURLProtocol.capturedRequests[Self.matchLinkURL],
+            "Version mismatch must trigger a fresh network call"
+        )
+        XCTAssertNotNil(result.link, "Re-resolution must return the new network result")
+
+        // After re-resolution the cache must hold the current-version envelope.
+        XCTAssertNotNil(
+            StorageUtils.getCachedAttributionResult(),
+            "Cache must be readable with current version after re-resolution"
+        )
+    }
+
+    func testCorruptCacheDataReturnsNilAndCausesReResolution() async throws {
+        // Write garbage bytes to simulate corrupt storage.
+        UserDefaults.standard.set(
+            Data([0xDE, 0xAD, 0xBE, 0xEF]),
+            forKey: "PostedCachedAttributionResult"
+        )
+        UserDefaults.standard.set(true, forKey: "PostedAttributionResolved")
+
+        XCTAssertNil(
+            StorageUtils.getCachedAttributionResult(),
+            "Corrupt data must return nil (safe decode failure)"
+        )
+
+        StubURLProtocol.responseData = #"{"link":null}"#.data(using: .utf8)!
+        _ = await Posted.shared._resolveAppLaunch(config: config, launchContext: nil, session: session)
+
+        XCTAssertNotNil(
+            StubURLProtocol.capturedRequests[Self.matchLinkURL],
+            "Corrupt cache must trigger a fresh network call"
         )
     }
 }
