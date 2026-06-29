@@ -139,9 +139,9 @@ final class ResolveAppLaunchTests: XCTestCase {
         let oldVersionJSON = #"{"schemaVersion":0,"result":{"processed":true,"link":null}}"#
         UserDefaults.standard.set(
             oldVersionJSON.data(using: .utf8)!,
-            forKey: "PostedCachedAttributionResult"
+            forKey: StorageUtils.Constants.cachedAttributionResultKey
         )
-        UserDefaults.standard.set(true, forKey: "PostedAttributionResolved")
+        UserDefaults.standard.set(true, forKey: StorageUtils.Constants.attributionResolvedKey)
 
         // getCachedAttributionResult must return nil on version mismatch.
         XCTAssertNil(
@@ -170,9 +170,9 @@ final class ResolveAppLaunchTests: XCTestCase {
         // Write garbage bytes to simulate corrupt storage.
         UserDefaults.standard.set(
             Data([0xDE, 0xAD, 0xBE, 0xEF]),
-            forKey: "PostedCachedAttributionResult"
+            forKey: StorageUtils.Constants.cachedAttributionResultKey
         )
-        UserDefaults.standard.set(true, forKey: "PostedAttributionResolved")
+        UserDefaults.standard.set(true, forKey: StorageUtils.Constants.attributionResolvedKey)
 
         XCTAssertNil(
             StorageUtils.getCachedAttributionResult(),
