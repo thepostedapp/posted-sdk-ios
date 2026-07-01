@@ -65,11 +65,16 @@ let config = PostedConfig(
 )
 ```
 
-### 2. Resolve initial link on app launch
+### 2. Resolve app launch (3.0.0+)
 
-Call `resolveInitialLink` once on cold start. It also mounts analytics automatically, so no separate `mountAnalytics` call is needed.
+Call `resolveAppLaunch` once on cold start. Pass the `LaunchContext` from your delegate so the SDK
+picks the correct attribution branch (link-present or deferred). Analytics are mounted automatically.
 
-AppDelegate:
+**Fire-once:** `resolveAppLaunch` records the attribution result on the first call and returns the
+cached value on every subsequent call within the same install. Call `resetSession()` to re-arm
+(testing only — do not call in production).
+
+**App delegate:**
 
 <details>
 <summary>AppDelegate example</summary>
@@ -79,7 +84,11 @@ func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
 ) -> Bool {
-    Posted.shared.resolveInitialLink(config: config, launchOptions: launchOptions) { result in
+    Task {
+        let result = await Posted.shared.resolveAppLaunch(
+            config: config,
+            launchContext: .launchOptions(launchOptions)
+        )
         if let link = result.link {
             // Navigate to link.route
         }
@@ -90,7 +99,7 @@ func application(
 
 </details>
 
-SceneDelegate:
+**Scene delegate:**
 
 <details>
 <summary>SceneDelegate example</summary>
@@ -101,7 +110,11 @@ func scene(
     willConnectTo session: UISceneSession,
     options connectionOptions: UIScene.ConnectionOptions
 ) {
-    Posted.shared.resolveInitialLink(config: config, connectionOptions: connectionOptions) { result in
+    Task {
+        let result = await Posted.shared.resolveAppLaunch(
+            config: config,
+            launchContext: .connectionOptions(connectionOptions)
+        )
         if let link = result.link {
             // Navigate to link.route
         }
@@ -111,12 +124,19 @@ func scene(
 
 </details>
 
+**Deferred-only (no URL context):** omit `launchContext` for installs with no incoming URL:
+
+```swift
+let result = await Posted.shared.resolveAppLaunch(config: config)
+```
+
 ### 3. Handle runtime links
 
-Handle custom scheme and Universal Links that arrive while the app is running:
+For links that arrive while the app is already running, read the URL directly from the delegate
+callback and navigate — no SDK call is needed for runtime links:
 
 <details>
-<summary>Custom scheme</summary>
+<summary>Custom scheme (app delegate)</summary>
 
 ```swift
 func application(
@@ -124,10 +144,7 @@ func application(
     open url: URL,
     options: [UIApplication.OpenURLOptionsKey: Any] = [:]
 ) -> Bool {
-    Task {
-        let result = await Posted.shared.processLink(url, config: config)
-        // handle result.link
-    }
+    // Parse url.path / url.host and navigate as needed.
     return true
 }
 ```
@@ -135,7 +152,7 @@ func application(
 </details>
 
 <details>
-<summary>Universal Link</summary>
+<summary>Universal Link (app delegate)</summary>
 
 ```swift
 func application(
@@ -145,10 +162,7 @@ func application(
 ) -> Bool {
     guard userActivity.activityType == NSUserActivityTypeBrowsingWeb,
           let url = userActivity.webpageURL else { return false }
-    Task {
-        let result = await Posted.shared.processLink(url, config: config)
-        // handle result.link
-    }
+    // Navigate to url.
     return true
 }
 ```
@@ -300,6 +314,33 @@ PostedSDK is also available for other app stacks:
 - Android SDK: [https://github.com/software-mansion-labs/android-detour](https://github.com/software-mansion-labs/android-detour)
 - Flutter SDK: [https://github.com/software-mansion-labs/detour-flutter-plugin](https://github.com/software-mansion-labs/detour-flutter-plugin)
 - React Native SDK: [https://github.com/software-mansion-labs/react-native-detour](https://github.com/software-mansion-labs/react-native-detour)
+
+---
+
+## Migrating from 2.x
+
+### `resolveInitialLink` → `resolveAppLaunch`
+
+`resolveInitialLink` is deprecated in 3.0.0 and will be removed in the next minor release (4.0).
+Replace it with `resolveAppLaunch(config:launchContext:)`:
+
+| 2.x (deprecated) | 3.0.0+ |
+|---|---|
+| `resolveInitialLink(config:launchOptions:completion:)` | `resolveAppLaunch(config:launchContext: .launchOptions(launchOptions))` |
+| `resolveInitialLink(config:connectionOptions:completion:)` | `resolveAppLaunch(config:launchContext: .connectionOptions(connectionOptions))` |
+
+The new method is `async`/`await` — wrap the call in a `Task {}` from your delegate method.
+
+### `processLink` → handle URLs directly
+
+`processLink` is deprecated in 3.0.0. For cold-start attribution use `resolveAppLaunch`.
+For runtime deep links (links that open an already-running app), read the URL from the system
+delegate callback and navigate — no SDK call is required.
+
+### Removal timeline
+
+Deprecated methods (`resolveInitialLink`, `processLink`) will be removed in 4.0 (one minor
+cycle after 3.0.0). Update before upgrading past 3.x to avoid breaking changes.
 
 ---
 
