@@ -187,6 +187,20 @@ public class Posted {
         return PostedResult(processed: true, link: resolvedLink)
     }
 
+    // Shared delegation core for both resolveInitialLink overloads. Internal so tests can
+    // exercise the path directly when the overload's argument type is not unit-testable
+    // (e.g. UIScene.ConnectionOptions has no public initializer).
+    func _resolveInitialLink(
+        config: PostedConfig,
+        launchContext: LaunchContext?,
+        completion: @escaping @Sendable (PostedResult) -> Void
+    ) {
+        Task {
+            let result = await resolveAppLaunch(config: config, launchContext: launchContext)
+            completion(result)
+        }
+    }
+
     @available(*, deprecated, renamed: "resolveAppLaunch")
     public func resolveInitialLink(
         config: PostedConfig,
@@ -194,10 +208,7 @@ public class Posted {
         completion: @escaping @Sendable (PostedResult) -> Void
     ) {
         PostedLogger.warn(tag, "[Deprecated] resolveInitialLink — migrate to resolveAppLaunch(config:launchContext:)")
-        Task {
-            let result = await resolveAppLaunch(config: config, launchContext: .launchOptions(launchOptions))
-            completion(result)
-        }
+        _resolveInitialLink(config: config, launchContext: .launchOptions(launchOptions), completion: completion)
     }
 
     @available(*, deprecated, renamed: "resolveAppLaunch")
@@ -207,10 +218,7 @@ public class Posted {
         completion: @escaping @Sendable (PostedResult) -> Void
     ) {
         PostedLogger.warn(tag, "[Deprecated] resolveInitialLink — migrate to resolveAppLaunch(config:launchContext:)")
-        Task {
-            let result = await resolveAppLaunch(config: config, launchContext: .connectionOptions(connectionOptions))
-            completion(result)
-        }
+        _resolveInitialLink(config: config, launchContext: .connectionOptions(connectionOptions), completion: completion)
     }
 
     // MARK: - resolveAppLaunch (3.0.0 facade)
