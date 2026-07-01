@@ -65,41 +65,34 @@ final class DeprecatedShimsTests: XCTestCase {
 
         StubURLProtocol.reset()
 
-        let exp = XCTestExpectation(description: "launchOptions completion called")
-        var received: PostedResult?
-        Posted.shared.resolveInitialLink(config: config, launchOptions: nil) { result in
-            received = result
-            exp.fulfill()
+        let received: PostedResult = await withCheckedContinuation { cont in
+            Posted.shared.resolveInitialLink(config: config, launchOptions: nil) { cont.resume(returning: $0) }
         }
-        await fulfillment(of: [exp], timeout: 3.0)
 
-        XCTAssertEqual(received?.link?.url, cached.link?.url,
+        XCTAssertEqual(received.link?.url, cached.link?.url,
             "resolveInitialLink must return the cached resolveAppLaunch result")
         XCTAssertTrue(StubURLProtocol.capturedRequests.isEmpty,
             "resolveInitialLink must not make a new network call when fire-once cache is warm")
     }
 
-    func testResolveInitialLinkConnectionOptionsDelegatesToResolveAppLaunch() async {
+    // UIScene.ConnectionOptions has no public initializer, so the connectionOptions overload
+    // cannot be exercised by fabricating that argument in unit tests. Instead we test
+    // _resolveInitialLink — the shared delegation core that both public overloads call —
+    // proving the same fire-once/no-new-request contract for both paths.
+    func testResolveInitialLinkSharedHelperDelegatesToResolveAppLaunch() async {
         StubURLProtocol.responseData = #"{"link":"https://example.com/scene-referral"}"#.data(using: .utf8)!
         let cached = await Posted.shared._resolveAppLaunch(config: config, launchContext: nil, session: session)
         XCTAssertNotNil(cached.link, "Precondition: cache must hold a resolved result")
 
         StubURLProtocol.reset()
 
-        let exp = XCTestExpectation(description: "connectionOptions completion called")
-        var received: PostedResult?
-        Posted.shared.resolveInitialLink(
-            config: config,
-            connectionOptions: UIScene.ConnectionOptions()
-        ) { result in
-            received = result
-            exp.fulfill()
+        let received: PostedResult = await withCheckedContinuation { cont in
+            Posted.shared._resolveInitialLink(config: config, launchContext: nil) { cont.resume(returning: $0) }
         }
-        await fulfillment(of: [exp], timeout: 3.0)
 
-        XCTAssertEqual(received?.link?.url, cached.link?.url,
-            "resolveInitialLink(connectionOptions:) must return the cached resolveAppLaunch result")
+        XCTAssertEqual(received.link?.url, cached.link?.url,
+            "_resolveInitialLink (shared path for both overloads) must return the cached result")
         XCTAssertTrue(StubURLProtocol.capturedRequests.isEmpty,
-            "resolveInitialLink must not make a new network call when fire-once cache is warm")
+            "_resolveInitialLink must not make a new network call when fire-once cache is warm")
     }
 }
