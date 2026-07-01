@@ -321,7 +321,7 @@ PostedSDK is also available for other app stacks:
 
 ### `resolveInitialLink` → `resolveAppLaunch`
 
-`resolveInitialLink` is deprecated in 3.0.0 and will be removed in the next minor release (4.0).
+`resolveInitialLink` is deprecated in 3.0.0 and will be removed in the next major release (4.0).
 Replace it with `resolveAppLaunch(config:launchContext:)`:
 
 | 2.x (deprecated) | 3.0.0+ |
@@ -339,8 +339,8 @@ delegate callback and navigate — no SDK call is required.
 
 ### Removal timeline
 
-Deprecated methods (`resolveInitialLink`, `processLink`) will be removed in 4.0 (one minor
-cycle after 3.0.0). Update before upgrading past 3.x to avoid breaking changes.
+Deprecated methods (`resolveInitialLink`, `processLink`) will be removed in 4.0 (next major
+release). Update before upgrading past 3.x to avoid breaking changes.
 
 ---
 

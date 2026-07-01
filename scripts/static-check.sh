@@ -7,4 +7,15 @@ swift package resolve
 echo "▶ lint/format (non-blocking)"
 swiftlint lint --quiet || echo "::warn:: swiftlint findings (non-blocking)"
 swiftformat --lint . || echo "::warn:: swiftformat diffs (non-blocking)"
+echo "▶ doc API drift check (non-blocking)"
+# README/CHANGELOG embed Swift snippets for these public symbols; warn if they disappear from Sources/.
+doc_api_symbols=("resolveAppLaunch" "LaunchContext" "resetSession")
+drift=0
+for sym in "${doc_api_symbols[@]}"; do
+  if ! grep -rq "func ${sym}\|enum ${sym}\|struct ${sym}\|var ${sym}" Sources/; then
+    echo "::warn:: doc API drift: '${sym}' not found in Sources/ — update README/CHANGELOG if renamed"
+    drift=1
+  fi
+done
+[ "$drift" -eq 0 ] && echo "  ✓ doc symbols present in Sources/"
 echo "✓ static gate passed (correctness verified in CI)"

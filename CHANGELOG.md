@@ -30,7 +30,7 @@ All notable changes to PostedSDK iOS are documented here.
 
 See [Migrating from 2.x](./README.md#migrating-from-2x) in the README.
 
-Deprecated symbols will be **removed in 4.0** (one minor cycle after 3.0.0).
+Deprecated symbols will be **removed in 4.0** (next major release).
 
 ---
 
