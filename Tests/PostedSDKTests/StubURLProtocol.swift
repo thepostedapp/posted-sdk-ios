@@ -7,11 +7,13 @@ final class StubURLProtocol: URLProtocol {
     static var responseData: Data = Data()
     static var responseStatusCode: Int = 200
     static var capturedRequests: [String: URLRequest] = [:]
+    static var requestCallCount: [String: Int] = [:]
 
     static func reset() {
         responseData = Data()
         responseStatusCode = 200
         capturedRequests = [:]
+        requestCallCount = [:]
     }
 
     static func makeSession() -> URLSession {
@@ -46,6 +48,7 @@ final class StubURLProtocol: URLProtocol {
         }
 
         StubURLProtocol.capturedRequests[url.absoluteString] = captured
+        StubURLProtocol.requestCallCount[url.absoluteString, default: 0] += 1
 
         let response = HTTPURLResponse(
             url: url,

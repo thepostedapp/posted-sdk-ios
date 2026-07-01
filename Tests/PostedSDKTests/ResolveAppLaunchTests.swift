@@ -1,4 +1,4 @@
-// Tests for resolveAppLaunch: two-branch dispatch + fire-once + re-arm (POS-125/POS-140).
+// Tests for resolveAppLaunch: two-branch dispatch + fire-once + re-arm + concurrency de-dup (POS-125/POS-139/POS-140).
 import XCTest
 @testable import PostedSDK
 
@@ -94,6 +94,24 @@ final class ResolveAppLaunchTests: XCTestCase {
 
         XCTAssertTrue(StubURLProtocol.capturedRequests.isEmpty, "Second call must not hit the network (fire-once)")
         XCTAssertEqual(first.link?.url, second.link?.url, "Second call must return the same cached result")
+    }
+
+    // MARK: - Concurrent first-launch de-dup (POS-139)
+
+    func testConcurrentFirstLaunchProducesExactlyOneNetworkCall() async throws {
+        StubURLProtocol.responseData = #"{"link":"https://example.com/promo"}"#.data(using: .utf8)!
+
+        // Fire two concurrent resolutions before the fire-once flag is persisted.
+        async let first = Posted.shared._resolveAppLaunch(config: config, launchContext: nil, session: session)
+        async let second = Posted.shared._resolveAppLaunch(config: config, launchContext: nil, session: session)
+
+        let (result1, result2) = await (first, second)
+
+        XCTAssertEqual(
+            StubURLProtocol.requestCallCount[Self.matchLinkURL], 1,
+            "Concurrent first-launch calls must produce exactly one network call"
+        )
+        XCTAssertEqual(result1.link?.url, result2.link?.url, "Both concurrent calls must return identical results")
     }
 
     // MARK: - Re-arm via resetSession
