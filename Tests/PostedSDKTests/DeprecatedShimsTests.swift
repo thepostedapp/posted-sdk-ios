@@ -95,4 +95,28 @@ final class DeprecatedShimsTests: XCTestCase {
         XCTAssertTrue(StubURLProtocol.capturedRequests.isEmpty,
             "_resolveInitialLink must not make a new network call when fire-once cache is warm")
     }
+
+    // MARK: - Deprecation warn (POS-174)
+
+    // Verifies the launchOptions overload emits exactly one deprecation warning.
+    // The connectionOptions overload cannot be called from unit tests (UIScene.ConnectionOptions
+    // has no public initialiser); that gap is tracked in POS-173.
+    func testResolveInitialLinkLaunchOptionsEmitsDeprecationWarn() async {
+        // Pre-warm fire-once cache via the stub session so resolveAppLaunch returns immediately.
+        StubURLProtocol.responseData = #"{"link":"https://example.com/referral"}"#.data(using: .utf8)!
+        _ = await Posted.shared._resolveAppLaunch(config: config, launchContext: nil, session: session)
+        StubURLProtocol.reset()
+
+        var capturedWarnings: [String] = []
+        PostedLogger._warnSink = { _, message in capturedWarnings.append(message) }
+        defer { PostedLogger._warnSink = nil }
+
+        let _: PostedResult = await withCheckedContinuation { cont in
+            Posted.shared.resolveInitialLink(config: config, launchOptions: nil) { cont.resume(returning: $0) }
+        }
+
+        let deprecationWarns = capturedWarnings.filter { $0.contains("[Deprecated] resolveInitialLink") }
+        XCTAssertEqual(deprecationWarns.count, 1,
+            "resolveInitialLink(launchOptions:) must emit exactly one deprecation warning per call")
+    }
 }
