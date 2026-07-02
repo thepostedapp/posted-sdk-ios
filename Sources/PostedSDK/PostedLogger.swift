@@ -13,11 +13,19 @@ enum PostedLogger {
         case error
     }
 
+#if DEBUG
+    // Test-only hook — nil in production. Set in tests to spy on warn calls.
+    static var _warnSink: ((String, String) -> Void)?
+#endif
+
     static func debug(_ tag: String, _ message: String) {
         log(tag: tag, level: .debug, message: message)
     }
 
     static func warn(_ tag: String, _ message: String) {
+#if DEBUG
+        _warnSink?(tag, message)
+#endif
         log(tag: tag, level: .warn, message: message)
     }
 
