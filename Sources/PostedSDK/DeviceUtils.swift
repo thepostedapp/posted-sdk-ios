@@ -29,8 +29,21 @@ class DeviceUtils {
         }
     }
 
+    /// FR9b read-format contract (POS-229 / POS-170 D7).
+    ///
+    /// The click page (C) writes the short-link URL to the iOS pasteboard *verbatim*, and the
+    /// click recorder (D) stores that identical string as `pastedLink`. The matcher exact-matches
+    /// `pastedLink` (weight 350), so write-format (C) MUST equal read-format (here). This read
+    /// format is therefore the IDENTITY function by contract: do not trim, lowercase, normalize,
+    /// re-encode, or otherwise mutate the pasteboard string — any transformation drops a
+    /// load-bearing signal. Exposed `internal` purely so the byte-identical round-trip test can
+    /// assert the no-transformation guarantee directly.
+    static func pastedLink(fromPasteboardString raw: String?) -> String? {
+        raw
+    }
+
     @MainActor
-    private static func readClipboardLinkIfAvailable(shouldUseClipboard: Bool) async -> String? {
+    static func readClipboardLinkIfAvailable(shouldUseClipboard: Bool) async -> String? {
         guard shouldUseClipboard else { return nil }
 
         if #available(iOS 14.0, *) {
@@ -48,7 +61,7 @@ class DeviceUtils {
             guard hasProbableWebURL else { return nil }
         }
 
-        return UIPasteboard.general.string
+        return pastedLink(fromPasteboardString: UIPasteboard.general.string)
     }
 
     @MainActor
