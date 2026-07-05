@@ -1,3 +1,4 @@
+import Foundation
 import UIKit
 import WebKit
 
@@ -42,18 +43,63 @@ class DeviceUtils {
         raw
     }
 
+    /// Default bound for the `detectPatterns` gate (POS-241).
+    ///
+    /// Long enough that a healthy `detectPatterns` callback wins the race on a real device,
+    /// short enough that a wedged callback can't stall app-launch fingerprinting for more than this.
+    static let detectPatternsTimeoutNanoseconds: UInt64 = 2_000_000_000  // 2s
+
+    /// Runs a bounded-timeout race for the pasteboard pattern-detection gate (POS-241).
+    ///
+    /// `UIPasteboard.general.detectPatterns(for:)` takes a completion handler that, on a real
+    /// device, may never fire — the same failure mode that hung unattended CI simulators (see
+    /// [POS-229]). Wrapping it in a plain, unbounded `withCheckedContinuation` therefore risks
+    /// hanging `getFingerprint` → match indefinitely at app launch. This races the detection
+    /// against a timeout: whichever arm resolves first wins, and if the callback never arrives the
+    /// gate degrades to `false` (skip clipboard) instead of hanging. A late/never callback after
+    /// the timeout is harmless — the once-guard drops it.
+    ///
+    /// `detect` is injected (rather than hard-wired to `UIPasteboard.general`) so the timeout /
+    /// first-wins behaviour is testable without the live singleton, which itself can block on
+    /// unattended sims.
+    @MainActor
+    static func probableWebURLGate(
+        timeoutNanoseconds: UInt64 = detectPatternsTimeoutNanoseconds,
+        detect: @escaping (@escaping (Bool) -> Void) -> Void
+    ) async -> Bool {
+        let onceGuard = ResumeOnceGuard()
+        return await withCheckedContinuation { continuation in
+            let timeout = Task {
+                try? await Task.sleep(nanoseconds: timeoutNanoseconds)
+                onceGuard.run {
+                    PostedLogger.warn(
+                        tag,
+                        "[Posted:FINGERPRINT] pasteboard detectPatterns gate timed out; skipping clipboard read"
+                    )
+                    continuation.resume(returning: false)
+                }
+            }
+            detect { hasPattern in
+                onceGuard.run {
+                    timeout.cancel()
+                    continuation.resume(returning: hasPattern)
+                }
+            }
+        }
+    }
+
     @MainActor
     static func readClipboardLinkIfAvailable(shouldUseClipboard: Bool) async -> String? {
         guard shouldUseClipboard else { return nil }
 
         if #available(iOS 14.0, *) {
-            let hasProbableWebURL = await withCheckedContinuation { continuation in
+            let hasProbableWebURL = await probableWebURLGate { resume in
                 UIPasteboard.general.detectPatterns(for: [.probableWebURL]) { result in
                     switch result {
                     case .success(let patterns):
-                        continuation.resume(returning: patterns.contains(.probableWebURL))
+                        resume(patterns.contains(.probableWebURL))
                     case .failure:
-                        continuation.resume(returning: false)
+                        resume(false)
                     }
                 }
             }
@@ -89,5 +135,28 @@ class DeviceUtils {
             timestamp: Int64(Date().timeIntervalSince1970 * 1000),
             pastedLink: pastedLink
         )
+    }
+}
+
+/// Thread-safe run-exactly-once guard for the `detectPatterns` timeout race (POS-241).
+///
+/// Both race arms — the `detectPatterns` completion handler and the timeout `Task` — may fire,
+/// and they can fire on different threads. This ensures the underlying `withCheckedContinuation`
+/// is resumed exactly once (resuming twice is undefined behaviour), letting the second arm's
+/// callback be safely dropped whenever it lands.
+final class ResumeOnceGuard: @unchecked Sendable {
+    private let lock = NSLock()
+    private var hasRun = false
+
+    /// Runs `body` iff no prior call has run; subsequent calls are no-ops.
+    func run(_ body: () -> Void) {
+        lock.lock()
+        if hasRun {
+            lock.unlock()
+            return
+        }
+        hasRun = true
+        lock.unlock()
+        body()
     }
 }
