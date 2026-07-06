@@ -35,7 +35,7 @@ Or in `Package.swift`:
 
 ```swift
 // TODO(B7): repo URL finalizes when the GitHub org/repo rename (board-gated) lands.
-.package(url: "https://github.com/posted-attribution/posted-sdk-ios", from: "3.0.0")
+.package(url: "https://github.com/thepostedapp/posted-sdk-ios", from: "3.0.0")
 ```
 
 ### CocoaPods
@@ -314,9 +314,9 @@ PostedSDK is also available for other app stacks:
 
 <!-- TODO(B7): GitHub org/repo names finalize when the board-gated rename lands. -->
 
-- Android SDK: [https://github.com/posted-attribution/posted-sdk-android](https://github.com/posted-attribution/posted-sdk-android)
-- Flutter SDK: [https://github.com/posted-attribution/posted-sdk-flutter](https://github.com/posted-attribution/posted-sdk-flutter)
-- React Native SDK: [https://github.com/posted-attribution/posted-sdk-react-native](https://github.com/posted-attribution/posted-sdk-react-native)
+- Android SDK: [https://github.com/thepostedapp/posted-sdk-android](https://github.com/thepostedapp/posted-sdk-android)
+- Flutter SDK: [https://github.com/thepostedapp/posted-sdk-flutter](https://github.com/thepostedapp/posted-sdk-flutter)
+- React Native SDK: [https://github.com/thepostedapp/posted-sdk-react-native](https://github.com/thepostedapp/posted-sdk-react-native)
 
 ---
 
