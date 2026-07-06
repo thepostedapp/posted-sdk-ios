@@ -47,7 +47,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         return true
     }
 
-    // Custom scheme, e.g. <YOUR_CUSTOM_SCHEME>://product/42
+    // Custom scheme, e.g. posted://product/42 (the `posted` scheme is registered in Info.plist)
     func application(
         _ app: UIApplication,
         open url: URL,

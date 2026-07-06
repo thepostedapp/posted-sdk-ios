@@ -8,10 +8,10 @@
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
 			<key>CFBundleURLName</key>
-			<string>&lt;YOUR_BUNDLE_IDENTIFIER&gt;</string>
+			<string>app.posted.example</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>&lt;YOUR_CUSTOM_SCHEME&gt;</string>
+				<string>posted</string>
 			</array>
 		</dict>
 	</array>
