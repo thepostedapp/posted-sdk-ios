@@ -4,8 +4,21 @@ All notable changes to PostedSDK iOS are documented here.
 
 ## [Unreleased — 3.0.0]
 
+### Changed
+
+- **Go-live rebrand (metadata).** Podspec `homepage`/`source`/`social_media_url` now point at the
+  `posted-sdk-ios` GitHub repository and the author contact email is `yuriy@postedapp.com`.
+  Documentation, account/sign-up, and cross-platform SDK links in the README now use posted URLs.
+  Sample API-key placeholder value uses the `posted_` prefix.
+  - The backend API domain (`godetour.dev`) and the short-link/Universal-Link example domain
+    (`godetour.link`) are intentionally **unchanged** in this release; those cutovers are gated on
+    DNS/backend readiness and land in lockstep across all platform SDKs (`TODO(B3)`/`TODO(B4)`).
+
 ### Added
 
+- **`posted://` custom URL scheme** registered in the example app's `Info.plist`
+  (`CFBundleURLTypes`), demonstrating custom-scheme deep links alongside the existing
+  clipboard-token deferred flow.
 - **`resolveAppLaunch(config:launchContext:)`** — new unified cold-start attribution method.
   Replaces both `resolveInitialLink` overloads. Pass a `LaunchContext` value from your app or
   scene delegate; omit it for deferred-only (no incoming URL) scenarios.

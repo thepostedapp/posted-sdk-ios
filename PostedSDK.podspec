@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'PostedSDK'
-  s.version          = '2.0.0'
+  s.version          = '3.0.0'
   s.summary          = 'PostedSDK — CPI tracking and deep link attribution for native iOS apps.'
 
   s.description      = <<-DESC
@@ -9,13 +9,16 @@ Pod::Spec.new do |s|
     handling, and analytics.
   DESC
 
-  s.homepage         = 'https://github.com/software-mansion-labs/ios-detour'
+  # TODO(B7): GitHub org/repo rename (*-detour -> posted-sdk-*) is board-gated (G1);
+  # metadata is staged against the target repo name now, finalize on rename.
+  s.homepage         = 'https://github.com/posted-attribution/posted-sdk-ios'
   s.license          = { :type => 'MIT', :file => 'LICENSE' }
-  s.author           = { 'Software Mansion' => 'contact@godetour.dev' }
+  s.author           = { 'Software Mansion' => 'yuriy@postedapp.com' }
   s.source           = {
-    :git => 'https://github.com/software-mansion-labs/ios-detour.git',
+    :git => 'https://github.com/posted-attribution/posted-sdk-ios.git',
     :tag => s.version.to_s
   }
+  s.social_media_url = 'https://github.com/posted-attribution/posted-sdk-ios'
 
   s.ios.deployment_target = '13.0'
   s.swift_version         = '5.5'

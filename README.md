@@ -10,17 +10,17 @@ PostedSDK is an iOS SDK for handling deferred deep links. A deferred link works 
 
 ## Quick links
 
-- Documentation: [https://detour.swmansion.com/docs/](https://detour.swmansion.com/docs/)
-- Installation guide: [https://detour.swmansion.com/docs/sdk/ios/sdk-installation](https://detour.swmansion.com/docs/sdk/ios/sdk-installation)
+- Documentation: [https://postedapp.com/docs/](https://postedapp.com/docs/) <!-- TODO(B6): update when new docs URL is live -->
+- Installation guide: [https://postedapp.com/docs/sdk/ios/sdk-installation](https://postedapp.com/docs/sdk/ios/sdk-installation) <!-- TODO(B6): update when new docs URL is live -->
 
 ## Create an account
 
 You need a Posted account to generate app credentials and configure your links.  
-Sign up here: [https://godetour.dev/auth/signup](https://godetour.dev/auth/signup)
+Sign up here: [https://postedapp.com](https://postedapp.com) <!-- TODO(B3): update once backend/site domain confirmed -->
 
 ## Installation
 
-Latest stable release: `2.0.0`
+Latest stable release: `3.0.0`
 
 ### Requirements
 
@@ -34,7 +34,8 @@ In Xcode, go to `File > Add Package Dependencies...`, enter the repository URL, 
 Or in `Package.swift`:
 
 ```swift
-.package(url: "https://github.com/software-mansion-labs/ios-detour", from: "2.0.0")
+// TODO(B7): repo URL finalizes when the GitHub org/repo rename (board-gated) lands.
+.package(url: "https://github.com/posted-attribution/posted-sdk-ios", from: "3.0.0")
 ```
 
 ### CocoaPods
@@ -46,7 +47,7 @@ platform :ios, '13.0'
 
 target 'YourAppTarget' do
   use_frameworks!
-  pod 'PostedSDK', '2.0.0'
+  pod 'PostedSDK', '3.0.0'
 end
 ```
 
@@ -215,7 +216,7 @@ Posted.shared.mountAnalytics(config: config)
 Posted.shared.unmountAnalytics()
 ```
 
-See the [analytics docs](https://detour.swmansion.com/docs/) for the full event list and retention tracking setup.
+See the [analytics docs](https://postedapp.com/docs/) <!-- TODO(B6): update when new docs URL is live --> for the full event list and retention tracking setup.
 
 ## Types
 
@@ -311,9 +312,11 @@ A ready-to-run example covering deferred links, Universal Links, and custom sche
 
 PostedSDK is also available for other app stacks:
 
-- Android SDK: [https://github.com/software-mansion-labs/android-detour](https://github.com/software-mansion-labs/android-detour)
-- Flutter SDK: [https://github.com/software-mansion-labs/detour-flutter-plugin](https://github.com/software-mansion-labs/detour-flutter-plugin)
-- React Native SDK: [https://github.com/software-mansion-labs/react-native-detour](https://github.com/software-mansion-labs/react-native-detour)
+<!-- TODO(B7): GitHub org/repo names finalize when the board-gated rename lands. -->
+
+- Android SDK: [https://github.com/posted-attribution/posted-sdk-android](https://github.com/posted-attribution/posted-sdk-android)
+- Flutter SDK: [https://github.com/posted-attribution/posted-sdk-flutter](https://github.com/posted-attribution/posted-sdk-flutter)
+- React Native SDK: [https://github.com/posted-attribution/posted-sdk-react-native](https://github.com/posted-attribution/posted-sdk-react-native)
 
 ---
 
