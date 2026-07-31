@@ -430,3 +430,117 @@ final class ContractConformanceTests: XCTestCase {
         XCTAssertTrue(extra.isEmpty, "analytics/retention body has unexpected keys: \(extra)")
     }
 }
+
+// MARK: - resolveAppLaunch → match-link conformance (POS-439, extends the POS-118 harness)
+//
+// Drives the PUBLIC one-shot `Posted.resolveAppLaunch` — via the same session-injectable
+// `_resolveAppLaunch` entry point ResolveAppLaunchTests.swift uses to make the call
+// interceptable by StubURLProtocol — instead of calling PostedNetwork.matchLink directly,
+// so this guards that the 3.0.0 facade refactor didn't drift the match-link wire body.
+//
+// iOS finding: resolveAppLaunch's match-link call always encodes a ProbabilisticFingerprint.
+// There is no deterministic-match code path on this platform — PostedNetwork.matchLink has a
+// single ProbabilisticFingerprint-only signature, and the only `clickId` concept on iOS is
+// returned in the *response* of the unrelated universal-link-click endpoint, which never
+// routes through match-link. So the two cases below are: (1) the deferred branch, the only
+// branch that reaches match-link, asserted against the contract's ProbabilisticFingerprint
+// member with an explicit absence check for `clickId`, and (2) the link-present branch,
+// which is asserted to never emit a match-link request at all.
+@MainActor
+final class ResolveAppLaunchMatchLinkConformanceTests: XCTestCase {
+    private let config = PostedConfig(apiKey: "test-api-key", appID: "com.test.app")
+    private var session: URLSession!
+
+    private static let matchLinkURL = "https://godetour.dev/api/link/match-link"
+    private static let universalClickURL = "https://godetour.dev/api/link/universal-link-click"
+
+    override func setUp() {
+        super.setUp()
+        StubURLProtocol.reset()
+        session = StubURLProtocol.makeSession()
+        // Clean attribution store so fire-once actually fires the network call.
+        Posted.shared.resetSession(allowDeferredRetry: true)
+    }
+
+    private func assertCommonHeaders(_ req: URLRequest, file: StaticString = #file, line: UInt = #line) {
+        XCTAssertEqual(
+            req.value(forHTTPHeaderField: "Authorization"), "Bearer test-api-key",
+            "Authorization header missing or wrong", file: file, line: line
+        )
+        XCTAssertEqual(
+            req.value(forHTTPHeaderField: "X-App-ID"), "com.test.app",
+            "X-App-ID header missing or wrong", file: file, line: line
+        )
+        let sdk = req.value(forHTTPHeaderField: "X-SDK") ?? ""
+        XCTAssertTrue(
+            sdk.hasPrefix("ios/"),
+            "X-SDK must start with 'ios/' — got '\(sdk)'", file: file, line: line
+        )
+    }
+
+    // MARK: - Deferred branch (the only resolveAppLaunch branch that reaches match-link)
+
+    func testResolveAppLaunchDeferredBranchEmitsContractValidProbabilisticMatchLink() async throws {
+        StubURLProtocol.responseData = #"{"link":"https://example.com/promo"}"#.data(using: .utf8)!
+
+        let result = await Posted.shared._resolveAppLaunch(config: config, launchContext: nil, session: session)
+
+        let req = try XCTUnwrap(
+            StubURLProtocol.capturedRequests[Self.matchLinkURL],
+            "resolveAppLaunch deferred branch must POST to match-link"
+        )
+        XCTAssertEqual(req.httpMethod, "POST")
+        assertCommonHeaders(req)
+        XCTAssertTrue(result.processed)
+
+        let body = try XCTUnwrap(req.httpBody)
+        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: body) as? [String: Any])
+
+        // Validate against the contract's ProbabilisticFingerprint oneOf member.
+        for key in ["platform", "model", "manufacturer", "systemVersion",
+                    "screenWidth", "screenHeight", "scale", "locale", "timestamp"] {
+            XCTAssertNotNil(json[key], "Required ProbabilisticFingerprint key '\(key)' missing from resolveAppLaunch match-link body")
+        }
+        XCTAssertEqual(json["platform"] as? String, "ios", "platform must be 'ios'")
+
+        // Documents the platform finding above: no DeterministicMatch oneOf member is ever sent.
+        XCTAssertNil(
+            json["clickId"],
+            "resolveAppLaunch match-link body must not contain 'clickId' — iOS has no deterministic match-link branch"
+        )
+    }
+
+    func testResolveAppLaunchDeferredBranchNoMatchStillEmitsContractValidBody() async throws {
+        StubURLProtocol.responseData = #"{"link":null}"#.data(using: .utf8)!
+
+        let result = await Posted.shared._resolveAppLaunch(config: config, launchContext: nil, session: session)
+
+        let req = try XCTUnwrap(StubURLProtocol.capturedRequests[Self.matchLinkURL])
+        let body = try XCTUnwrap(req.httpBody)
+        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: body) as? [String: Any])
+
+        XCTAssertNil(json["clickId"])
+        XCTAssertNotNil(json["timestamp"])
+        XCTAssertTrue(result.processed)
+        XCTAssertNil(result.link, "no matching link should yield a nil link in result")
+    }
+
+    // MARK: - Link-present branch (proves the other resolveAppLaunch branch never touches match-link)
+
+    func testResolveAppLaunchLinkPresentBranchNeverEmitsMatchLink() async throws {
+        StubURLProtocol.responseData = #"{"allowed":true}"#.data(using: .utf8)!
+        let launchURL = URL(string: "https://godetour.dev/u/summer?ref=banner")!
+        let context = LaunchContext.launchOptions([.url: launchURL])
+
+        _ = await Posted.shared._resolveAppLaunch(config: config, launchContext: context, session: session)
+
+        XCTAssertNotNil(
+            StubURLProtocol.capturedRequests[Self.universalClickURL],
+            "link-present branch must call universal-link-click"
+        )
+        XCTAssertNil(
+            StubURLProtocol.capturedRequests[Self.matchLinkURL],
+            "link-present branch must never emit a match-link request"
+        )
+    }
+}
