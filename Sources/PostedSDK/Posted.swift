@@ -25,6 +25,13 @@ public class Posted {
         StorageUtils.migrateKeysIfNeeded()
     }
 
+    // Internal-only bookkeeping accessors (POS-267). `@testable import` exposes `internal` members
+    // to the test target, letting tests assert the epoch guard directly right after resetSession()
+    // instead of needing a second live network race to prove a de-duped caller would no longer see
+    // the stale in-flight task.
+    var debugResolutionGeneration: Int { resolutionGeneration }
+    var debugHasInFlightResolutionTask: Bool { inFlightResolutionTask != nil }
+
     public func mountAnalytics(config: PostedConfig) {
         PostedAnalytics.mount(config: config)
     }
