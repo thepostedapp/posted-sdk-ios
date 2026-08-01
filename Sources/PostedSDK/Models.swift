@@ -75,10 +75,39 @@ struct LocaleTag: Codable {
 public struct PostedResult: Sendable, Codable {
     public let processed: Bool
     public let link: PostedLink?
+    // Internal-only: true when this result came from a genuine network/transport failure rather
+    // than a legitimate "asked the server, no match" response. Deliberately kept out of
+    // `CodingKeys` so the persisted fire-once cache envelope's JSON shape never changes — it must
+    // stay decodable by installs that cached a result before this field existed.
+    let resolutionFailed: Bool
 
     public init(processed: Bool, link: PostedLink?) {
         self.processed = processed
         self.link = link
+        self.resolutionFailed = false
+    }
+
+    init(processed: Bool, link: PostedLink?, resolutionFailed: Bool) {
+        self.processed = processed
+        self.link = link
+        self.resolutionFailed = resolutionFailed
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case processed, link
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        processed = try container.decode(Bool.self, forKey: .processed)
+        link = try container.decodeIfPresent(PostedLink.self, forKey: .link)
+        resolutionFailed = false
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(processed, forKey: .processed)
+        try container.encodeIfPresent(link, forKey: .link)
     }
 
     public var route: String? { link?.route }
@@ -89,5 +118,12 @@ public struct PostedResult: Sendable, Codable {
 
     public static func empty() -> PostedResult {
         return PostedResult(processed: true, link: nil)
+    }
+
+    // Genuine resolution failure (transport error, non-2xx, decode/encode error, bad config URL) —
+    // distinct from `.empty()`, which represents a successful call with no match. Fire-once must
+    // not be set on this result so a later launch retries.
+    static func failed() -> PostedResult {
+        return PostedResult(processed: true, link: nil, resolutionFailed: true)
     }
 }
