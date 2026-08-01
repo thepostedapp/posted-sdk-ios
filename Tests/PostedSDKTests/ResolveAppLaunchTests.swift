@@ -317,6 +317,22 @@ final class ResolveAppLaunchTests: XCTestCase {
         )
     }
 
+    func testPreExistingCacheEnvelopeWithoutResolutionFailedKeyDecodesSuccessfully() throws {
+        // Simulates a fire-once cache blob written by an SDK version before `resolutionFailed` existed.
+        let legacyEnvelopeJSON = #"{"schemaVersion":1,"result":{"processed":true,"link":{"url":"https://example.com/legacy","route":"legacy","pathname":"legacy","params":{},"type":"deferred"}}}"#
+        UserDefaults.standard.set(
+            legacyEnvelopeJSON.data(using: .utf8)!,
+            forKey: StorageUtils.Constants.cachedAttributionResultKey
+        )
+        UserDefaults.standard.set(true, forKey: StorageUtils.Constants.attributionResolvedKey)
+
+        let cached = StorageUtils.getCachedAttributionResult()
+
+        XCTAssertNotNil(cached, "Cache written before resolutionFailed existed must still decode")
+        XCTAssertEqual(cached?.link?.url, "https://example.com/legacy")
+        XCTAssertFalse(cached?.resolutionFailed ?? true, "Missing key must default to false, not a failure")
+    }
+
     func testCorruptCacheDataReturnsNilAndCausesReResolution() async throws {
         // Write garbage bytes to simulate corrupt storage.
         UserDefaults.standard.set(
@@ -336,6 +352,87 @@ final class ResolveAppLaunchTests: XCTestCase {
         XCTAssertNotNil(
             StubURLProtocol.capturedRequests[Self.matchLinkURL],
             "Corrupt cache must trigger a fresh network call"
+        )
+    }
+
+    // MARK: - Genuine network failure must not set fire-once (POS-460)
+
+    func testDeferredNetworkFailureDoesNotSetFireOnceAndRetriesNextLaunch() async throws {
+        StubURLProtocol.responseStatusCode = 500
+        StubURLProtocol.responseData = Data()
+
+        let result = await Posted.shared._resolveAppLaunch(config: config, launchContext: nil, session: session)
+
+        XCTAssertTrue(result.resolutionFailed, "A non-2xx response must be classified as a genuine failure")
+        XCTAssertFalse(
+            StorageUtils.isAttributionResolved(),
+            "fire-once must NOT be set when the single network call fails"
+        )
+
+        StubURLProtocol.reset()
+        StubURLProtocol.responseData = #"{"link":"https://example.com/retry"}"#.data(using: .utf8)!
+
+        let retry = await Posted.shared._resolveAppLaunch(config: config, launchContext: nil, session: session)
+
+        XCTAssertNotNil(
+            StubURLProtocol.capturedRequests[Self.matchLinkURL],
+            "A later launch must retry over the network after a prior genuine failure"
+        )
+        XCTAssertEqual(retry.link?.url, "https://example.com/retry")
+    }
+
+    func testLegitimateEmptyMatchStillSetsFireOnceAndDoesNotRetry() async throws {
+        StubURLProtocol.responseData = #"{"link":null}"#.data(using: .utf8)!
+
+        let result = await Posted.shared._resolveAppLaunch(config: config, launchContext: nil, session: session)
+
+        XCTAssertFalse(result.resolutionFailed, "A successful call with no match is not a resolution failure")
+        XCTAssertTrue(
+            StorageUtils.isAttributionResolved(),
+            "fire-once must be set on a legitimate empty match, distinct from a genuine failure"
+        )
+
+        StubURLProtocol.reset()
+        StubURLProtocol.responseData = #"{"link":"https://example.com/should-not-be-fetched"}"#.data(using: .utf8)!
+
+        _ = await Posted.shared._resolveAppLaunch(config: config, launchContext: nil, session: session)
+
+        XCTAssertTrue(
+            StubURLProtocol.capturedRequests.isEmpty,
+            "A legitimate empty match must short-circuit to cache, not retry"
+        )
+    }
+
+    func testConcurrentFirstLaunchFailureProducesExactlyOneNetworkCallAndNoFireOnce() async throws {
+        StubURLProtocol.responseStatusCode = 500
+        StubURLProtocol.responseData = Data()
+
+        let cfg = config
+        let sess = session!
+        let callerCount = 10
+
+        let results = await withTaskGroup(of: PostedResult.self) { group in
+            for _ in 0..<callerCount {
+                group.addTask {
+                    await Posted.shared._resolveAppLaunch(config: cfg, launchContext: nil, session: sess)
+                }
+            }
+            var collected: [PostedResult] = []
+            for await result in group {
+                collected.append(result)
+            }
+            return collected
+        }
+
+        XCTAssertEqual(results.count, callerCount)
+        XCTAssertEqual(
+            StubURLProtocol.requestCallCount[Self.matchLinkURL], 1,
+            "N concurrent first-launch calls during a failure must still produce exactly one network call"
+        )
+        XCTAssertTrue(results.allSatisfy { $0.resolutionFailed }, "All concurrent callers must observe the failed result")
+        XCTAssertFalse(
+            StorageUtils.isAttributionResolved(),
+            "fire-once must not be set after a failed concurrent first-launch resolution"
         )
     }
 }

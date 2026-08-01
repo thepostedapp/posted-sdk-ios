@@ -272,10 +272,12 @@ public class Posted {
                 PostedLogger.debug(self.tag, "resolveAppLaunch: deferred branch")
                 result = await self.resolveAppLaunchDeferred(config: config, session: session)
             }
-            if self.resolutionGeneration == generation {
-                StorageUtils.markAttributionResolved(result: result)
-            } else {
+            if self.resolutionGeneration != generation {
                 PostedLogger.debug(self.tag, "resolveAppLaunch: resetSession invoked mid-resolve, discarding stale fire-once write")
+            } else if result.resolutionFailed {
+                PostedLogger.debug(self.tag, "resolveAppLaunch: resolution failed, fire-once not set — a later launch will retry")
+            } else {
+                StorageUtils.markAttributionResolved(result: result)
             }
             return result
         }

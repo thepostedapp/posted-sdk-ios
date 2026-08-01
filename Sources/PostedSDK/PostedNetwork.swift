@@ -21,7 +21,7 @@ class PostedNetwork {
         PostedLogger.error(tag, "[Posted:NETWORK_ERROR] \(message)")
 
         DispatchQueue.main.async {
-            completion(.empty())
+            completion(.failed())
         }
     }
 
@@ -77,7 +77,7 @@ class PostedNetwork {
         }
 
         guard let httpResponse = response as? HTTPURLResponse else {
-            DispatchQueue.main.async { completion(.empty()) }
+            logAndFail("Response Error: Response was not an HTTP response", completion: completion)
             return
         }
 
