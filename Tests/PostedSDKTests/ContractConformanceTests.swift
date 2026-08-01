@@ -184,6 +184,26 @@ final class ContractConformanceTests: XCTestCase {
         XCTAssertTrue(extra.isEmpty, "match-link body has unexpected keys: \(extra)")
     }
 
+    // POS-464: a server error body whose "error" field is a non-container top-level value (e.g. a
+    // raw number) is not a valid JSONSerialization root object. Re-encoding it for the error message
+    // must degrade gracefully instead of raising an uncaught NSException.
+    func testMatchLinkNonContainerErrorFieldDoesNotCrash() {
+        StubURLProtocol.responseStatusCode = 400
+        StubURLProtocol.responseData = #"{"error":42}"#.data(using: .utf8)!
+        let exp = expectation(description: "matchLink completes")
+
+        PostedNetwork.matchLink(
+            config: testConfig,
+            fingerprint: makeFingerprint(),
+            session: session
+        ) { result in
+            XCTAssertTrue(result.resolutionFailed, "non-2xx response must surface as a resolution failure")
+            exp.fulfill()
+        }
+
+        wait(for: [exp], timeout: 3.0)
+    }
+
     // MARK: - resolve-short
 
     func testResolveShortShape() async throws {
@@ -359,6 +379,26 @@ final class ContractConformanceTests: XCTestCase {
         let json = try XCTUnwrap(JSONSerialization.jsonObject(with: body) as? [String: Any])
 
         XCTAssertNil(json["data"], "analytics/event must omit 'data' when nil")
+    }
+
+    // POS-464: NaN is not representable by JSONSerialization. The isValidJSONObject guard must
+    // reject it before encoding rather than let data(withJSONObject:) raise an uncaught NSException.
+    func testAnalyticsEventUnrepresentableDataDoesNotCrash() async throws {
+        StubURLProtocol.responseData = #"{"ok":true,"eventId":"evt_abc"}"#.data(using: .utf8)!
+
+        await AnalyticsNetwork.sendEvent(
+            config: testConfig,
+            eventName: "purchase",
+            data: ["value": Double.nan],
+            deviceID: "test-device-uuid",
+            session: session
+        )
+
+        let req = try XCTUnwrap(StubURLProtocol.capturedRequests[Self.analyticsEventURL])
+        let body = try XCTUnwrap(req.httpBody)
+        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: body) as? [String: Any])
+
+        XCTAssertNil(json["data"], "unrepresentable data must be dropped rather than crash the encode")
     }
 
     func testAnalyticsEventNoAdditionalProperties() async throws {

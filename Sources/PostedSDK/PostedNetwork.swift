@@ -90,7 +90,8 @@ class PostedNetwork {
             {
                 if let strError = errorContent as? String {
                     errorMessage = strError
-                } else if let errorBytes = try? JSONSerialization.data(withJSONObject: errorContent),
+                } else if JSONSerialization.isValidJSONObject(errorContent),
+                          let errorBytes = try? JSONSerialization.data(withJSONObject: errorContent),
                           let strified = String(data: errorBytes, encoding: .utf8)
                 {
                     errorMessage = strified
