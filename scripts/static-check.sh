@@ -7,8 +7,12 @@ swift package resolve
 echo "▶ lint/format (non-blocking)"
 swiftlint lint --quiet || echo "::warn:: swiftlint findings (non-blocking)"
 swiftformat --lint . || echo "::warn:: swiftformat diffs (non-blocking)"
-echo "▶ doc API drift check (non-blocking)"
-# README/CHANGELOG embed Swift snippets for these public symbols; warn if they disappear from Sources/.
+echo "▶ doc API drift check (non-blocking, cheap pre-check)"
+# README/CHANGELOG embed Swift snippets for these public symbols; warn if they disappear from
+# Sources/. This only catches symbol removal/rename, not signature drift (e.g. a renamed
+# parameter label) — Tests/PostedSDKTests/DocAPISnippetTests.swift is the compile-checked
+# authority for that: it reproduces the doc snippets verbatim and fails to build in the `test`
+# CI job if any of these 3 symbols' shapes change (POS-171).
 doc_api_symbols=("resolveAppLaunch" "LaunchContext" "resetSession")
 drift=0
 for sym in "${doc_api_symbols[@]}"; do
