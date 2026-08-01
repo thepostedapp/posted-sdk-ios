@@ -15,6 +15,9 @@ public class Posted {
 
     private let tag = "Posted"
     private var inFlightResolutionTask: Task<PostedResult, Never>?
+    // Bumped by resetSession() so an in-flight resolution's completion can detect it was reset
+    // mid-flight and skip re-marking fire-once — the reset must be honored, not clobbered.
+    private var resolutionGeneration = 0
 
     private init() {
         StorageUtils.migrateKeysIfNeeded()
@@ -30,6 +33,7 @@ public class Posted {
 
     public func resetSession(allowDeferredRetry: Bool = false) {
         inFlightResolutionTask = nil
+        resolutionGeneration += 1
         StorageUtils.clearAttributionResolved()
         PostedLogger.debug(tag, "Session reset")
         if allowDeferredRetry {
@@ -256,6 +260,7 @@ public class Posted {
         }
 
         let launchURL = extractLaunchURL(from: launchContext, config: config)
+        let generation = resolutionGeneration
 
         let task = Task<PostedResult, Never> { [weak self] in
             guard let self else { return .empty() }
@@ -267,7 +272,11 @@ public class Posted {
                 PostedLogger.debug(self.tag, "resolveAppLaunch: deferred branch")
                 result = await self.resolveAppLaunchDeferred(config: config, session: session)
             }
-            StorageUtils.markAttributionResolved(result: result)
+            if self.resolutionGeneration == generation {
+                StorageUtils.markAttributionResolved(result: result)
+            } else {
+                PostedLogger.debug(self.tag, "resolveAppLaunch: resetSession invoked mid-resolve, discarding stale fire-once write")
+            }
             return result
         }
         inFlightResolutionTask = task

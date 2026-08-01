@@ -138,6 +138,105 @@ final class ResolveAppLaunchTests: XCTestCase {
         )
     }
 
+    // MARK: - Re-arm across a real scheduler hop (POS-352, mirrors Android POS-182)
+
+    // Unlike testResetSessionRearmsFireOnce above (sequential awaits within a single Task),
+    // this drives both resolves through Task.detached and the reset through a real
+    // DispatchQueue.main.async hop, proving the re-arm survives an actual scheduler boundary
+    // rather than relying on structured-concurrency ordering within one Task.
+    func testResetSessionRearmsFireOnceAcrossRealSchedulerHop() async throws {
+        let cfg = config
+        let sess = session!
+        StubURLProtocol.responseData = #"{"link":"https://example.com/first"}"#.data(using: .utf8)!
+
+        let first = await Task.detached {
+            await Posted.shared._resolveAppLaunch(config: cfg, launchContext: nil, session: sess)
+        }.value
+        XCTAssertNotNil(first.link)
+        XCTAssertTrue(StorageUtils.isAttributionResolved(), "Attribution must be marked resolved after first call")
+
+        // Re-arm via a real DispatchQueue.main.async hop rather than an inline call.
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            DispatchQueue.main.async {
+                Posted.shared.resetSession()
+                continuation.resume()
+            }
+        }
+        XCTAssertFalse(StorageUtils.isAttributionResolved(), "resetSession must clear the fire-once flag")
+
+        StubURLProtocol.reset()
+        StubURLProtocol.responseData = #"{"link":"https://example.com/rearm"}"#.data(using: .utf8)!
+
+        let second = await Task.detached {
+            await Posted.shared._resolveAppLaunch(config: cfg, launchContext: nil, session: sess)
+        }.value
+
+        XCTAssertNotNil(
+            StubURLProtocol.capturedRequests[Self.matchLinkURL],
+            "After resetSession, resolveAppLaunch must perform a fresh network call across a real scheduler hop"
+        )
+        XCTAssertEqual(second.link?.url, "https://example.com/rearm")
+    }
+
+    // MARK: - resetSession mid-resolve (POS-352, mirrors Android POS-182)
+
+    // Uses a gated mock-server handshake (StubURLProtocol.requestReceived / .releaseResponse) to
+    // force deterministic overlap between an in-flight resolve and a concurrent resetSession()
+    // call — no sleeps. Guards against the in-flight resolution's completion clobbering the reset
+    // with a stale fire-once write (clear-under-lock + re-resolve).
+    func testResetSessionMidResolveHonoredOnNextResolve() async throws {
+        let requestReceived = DispatchSemaphore(value: 0)
+        let releaseResponse = DispatchSemaphore(value: 0)
+        StubURLProtocol.requestReceived = requestReceived
+        StubURLProtocol.releaseResponse = releaseResponse
+        StubURLProtocol.responseData = #"{"link":"https://example.com/in-flight"}"#.data(using: .utf8)!
+
+        // Start a resolve but don't await it yet — its network call is gated open on the stub.
+        async let inFlight = Posted.shared._resolveAppLaunch(config: config, launchContext: nil, session: session)
+
+        // Block deterministically until the gated stub has actually received the request,
+        // proving genuine overlap rather than relying on timing.
+        await waitForSemaphore(requestReceived)
+
+        // resetSession() lands while the first resolve is still suspended on the network call.
+        Posted.shared.resetSession()
+        XCTAssertFalse(
+            StorageUtils.isAttributionResolved(),
+            "resetSession must clear the flag while a resolve is in flight"
+        )
+
+        // Let the gated in-flight resolve complete.
+        releaseResponse.signal()
+        _ = await inFlight
+
+        // The in-flight resolve's completion must not clobber the reset with a stale write.
+        XCTAssertFalse(
+            StorageUtils.isAttributionResolved(),
+            "resetSession's clear must be honored — the in-flight resolve's completion must not re-mark fire-once"
+        )
+
+        StubURLProtocol.reset()
+        StubURLProtocol.responseData = #"{"link":"https://example.com/after-reset"}"#.data(using: .utf8)!
+
+        // The next resolve must make a fresh network call (re-resolve), not return stale cache.
+        let next = await Posted.shared._resolveAppLaunch(config: config, launchContext: nil, session: session)
+
+        XCTAssertNotNil(
+            StubURLProtocol.capturedRequests[Self.matchLinkURL],
+            "resetSession invoked mid-resolve must be honored: the next resolveAppLaunch must re-resolve over the network"
+        )
+        XCTAssertEqual(next.link?.url, "https://example.com/after-reset")
+    }
+
+    private func waitForSemaphore(_ semaphore: DispatchSemaphore) async {
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            DispatchQueue.global().async {
+                semaphore.wait()
+                continuation.resume()
+            }
+        }
+    }
+
     // MARK: - Defensive fire-once persistence (POS-140)
 
     func testFlagAndCacheConsistentAfterResolution() async throws {
