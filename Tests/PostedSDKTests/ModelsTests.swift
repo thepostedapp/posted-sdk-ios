@@ -56,13 +56,27 @@ final class ModelsTests: XCTestCase {
 
     func testCacheRoundTripDoesNotAddResolutionFailedKeyToWireJSON() throws {
         let failed = PostedResult.failed()
+        let failedData = try JSONEncoder().encode(failed)
+        let failedJSON = try XCTUnwrap(JSONSerialization.jsonObject(with: failedData) as? [String: Any])
 
-        let data = try JSONEncoder().encode(failed)
-        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        XCTAssertNil(failedJSON["resolutionFailed"], "resolutionFailed must never appear on the wire/cache JSON")
 
-        XCTAssertNil(json["resolutionFailed"], "resolutionFailed must never appear on the wire/cache JSON")
+        // `.failed()` has a nil link, and encodeIfPresent omits nil keys entirely, so the
+        // {processed, link} shape assertion needs a fixture with a non-nil link.
+        let link = PostedLink(
+            url: "https://example.com/promo",
+            route: "/promo",
+            pathname: "/promo",
+            params: [:],
+            type: .deferred
+        )
+        let matched = PostedResult(processed: true, link: link)
+        let matchedData = try JSONEncoder().encode(matched)
+        let matchedJSON = try XCTUnwrap(JSONSerialization.jsonObject(with: matchedData) as? [String: Any])
+
+        XCTAssertNil(matchedJSON["resolutionFailed"], "resolutionFailed must never appear on the wire/cache JSON")
         XCTAssertEqual(
-            Set(json.keys), Set(["processed", "link"]),
+            Set(matchedJSON.keys), Set(["processed", "link"]),
             "persisted cache envelope shape must stay exactly {processed, link} — no new keys"
         )
     }
