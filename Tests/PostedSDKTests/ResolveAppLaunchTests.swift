@@ -114,6 +114,40 @@ final class ResolveAppLaunchTests: XCTestCase {
         XCTAssertEqual(result1.link?.url, result2.link?.url, "Both concurrent calls must return identical results")
     }
 
+    // MARK: - N-way concurrent first-launch de-dup (POS-159)
+
+    // POS-139's de-dup was only validated with 2 concurrent callers. This drives 10 concurrent
+    // first-launch resolutions through a TaskGroup to prove the single-flight guard holds at
+    // higher fan-out, not just the minimal 2-caller race.
+    func testTenConcurrentFirstLaunchCallsProduceExactlyOneNetworkCall() async throws {
+        StubURLProtocol.responseData = #"{"link":"https://example.com/promo"}"#.data(using: .utf8)!
+
+        let cfg = config
+        let sess = session!
+        let callerCount = 10
+
+        let results = await withTaskGroup(of: PostedResult.self) { group in
+            for _ in 0..<callerCount {
+                group.addTask {
+                    await Posted.shared._resolveAppLaunch(config: cfg, launchContext: nil, session: sess)
+                }
+            }
+            var collected: [PostedResult] = []
+            for await result in group {
+                collected.append(result)
+            }
+            return collected
+        }
+
+        XCTAssertEqual(results.count, callerCount)
+        XCTAssertEqual(
+            StubURLProtocol.requestCallCount[Self.matchLinkURL], 1,
+            "N=\(callerCount) concurrent first-launch calls must still produce exactly one network call"
+        )
+        let urls = Set(results.compactMap { $0.link?.url })
+        XCTAssertEqual(urls.count, 1, "All concurrent callers must observe the identical resolved result")
+    }
+
     // MARK: - Re-arm via resetSession
 
     func testResetSessionRearmsFireOnce() async throws {
