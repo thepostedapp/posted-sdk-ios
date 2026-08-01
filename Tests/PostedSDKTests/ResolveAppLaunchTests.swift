@@ -228,6 +228,61 @@ final class ResolveAppLaunchTests: XCTestCase {
         XCTAssertEqual(next.link?.url, "https://example.com/after-reset")
     }
 
+    // MARK: - resetSession mid-resolve must not clobber a fresher in-flight resolve (POS-267,
+    // mirrors RN POS-154's inFlight-clear-under-lock guard)
+
+    // A resolve started before resetSession() ("stale") settling AFTER a fresh, post-reset resolve
+    // ("fresh") has already taken over `inFlightResolutionTask` must not wipe out that bookkeeping.
+    // Otherwise a third caller arriving while `fresh` is still in flight would see no in-flight
+    // task and fire its own duplicate network call instead of de-duping against `fresh` — the
+    // "double-fire" companion of the fire-once-clobber race covered above.
+    func testResetSessionMidResolveDoesNotClobberSubsequentDedup() async throws {
+        let staleReceived = DispatchSemaphore(value: 0)
+        let staleRelease = DispatchSemaphore(value: 0)
+        StubURLProtocol.requestReceived = staleReceived
+        StubURLProtocol.releaseResponse = staleRelease
+        StubURLProtocol.responseData = #"{"link":"https://example.com/stale"}"#.data(using: .utf8)!
+
+        async let stale = Posted.shared._resolveAppLaunch(config: config, launchContext: nil, session: session)
+        await waitForSemaphore(staleReceived)
+
+        // resetSession() lands while `stale` is still parked on the network.
+        Posted.shared.resetSession()
+
+        // Gate the post-reset resolve on its own semaphore pair.
+        let freshReceived = DispatchSemaphore(value: 0)
+        let freshRelease = DispatchSemaphore(value: 0)
+        StubURLProtocol.requestReceived = freshReceived
+        StubURLProtocol.releaseResponse = freshRelease
+        StubURLProtocol.responseData = #"{"link":"https://example.com/fresh"}"#.data(using: .utf8)!
+
+        async let fresh = Posted.shared._resolveAppLaunch(config: config, launchContext: nil, session: session)
+        await waitForSemaphore(freshReceived)
+
+        // Let `stale` complete while `fresh` is still in flight.
+        staleRelease.signal()
+        _ = await stale
+
+        // A third caller arriving now must de-dup against `fresh`, not fire its own network call.
+        async let third = Posted.shared._resolveAppLaunch(config: config, launchContext: nil, session: session)
+
+        // Release fresh's gate twice: once for the legitimate `fresh` call, and once defensively
+        // in case a buggy implementation let `third` start its own, independently gated network
+        // call — this turns a bug into a clean assertion failure instead of a hung test.
+        freshRelease.signal()
+        freshRelease.signal()
+
+        let freshResult = await fresh
+        let thirdResult = await third
+
+        XCTAssertEqual(
+            StubURLProtocol.requestCallCount[Self.matchLinkURL], 2,
+            "A caller arriving while a post-reset resolve is in flight must de-dup against it, not fire a second network call (1 for stale + 1 for fresh, none for third)"
+        )
+        XCTAssertEqual(thirdResult.link?.url, freshResult.link?.url, "De-duped caller must observe fresh's result")
+        XCTAssertEqual(freshResult.link?.url, "https://example.com/fresh")
+    }
+
     private func waitForSemaphore(_ semaphore: DispatchSemaphore) async {
         await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
             DispatchQueue.global().async {

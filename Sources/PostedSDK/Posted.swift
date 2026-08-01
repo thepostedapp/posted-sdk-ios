@@ -16,7 +16,9 @@ public class Posted {
     private let tag = "Posted"
     private var inFlightResolutionTask: Task<PostedResult, Never>?
     // Bumped by resetSession() so an in-flight resolution's completion can detect it was reset
-    // mid-flight and skip re-marking fire-once — the reset must be honored, not clobbered.
+    // mid-flight and skip re-marking fire-once, and skip clearing `inFlightResolutionTask` if a
+    // fresher post-reset resolution has since taken it over — the reset must be honored, not
+    // clobbered, and a de-duped caller must not trigger a duplicate network call.
     private var resolutionGeneration = 0
 
     private init() {
@@ -280,7 +282,16 @@ public class Posted {
             return result
         }
         inFlightResolutionTask = task
-        defer { inFlightResolutionTask = nil }
+        defer {
+            // Only clear the in-flight pointer if no resetSession() happened since this call
+            // started. Otherwise a stale resolution settling after a reset would clobber the
+            // bookkeeping for a fresher in-flight resolution started post-reset, causing a
+            // duplicate network call for a de-duped caller (the double-fire companion of the
+            // fire-once-clobber race above).
+            if resolutionGeneration == generation {
+                inFlightResolutionTask = nil
+            }
+        }
         return await task.value
     }
 
