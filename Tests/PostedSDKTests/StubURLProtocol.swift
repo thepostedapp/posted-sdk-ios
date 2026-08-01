@@ -41,6 +41,17 @@ final class StubURLProtocol: URLProtocol {
             return
         }
 
+        // Snapshot the gate + response config before signaling. A test that reassigns
+        // requestReceived/releaseResponse/responseData to gate a second overlapping call while
+        // this request is still parked between signal() and wait() would otherwise race: this
+        // request could pick up the OTHER call's semaphore (deadlock — nothing left waiting on
+        // its own releaseResponse) or its response payload. Pinning everything to the values in
+        // effect when this load started makes the load immune to later reassignment.
+        let requestReceivedSemaphore = StubURLProtocol.requestReceived
+        let releaseResponseSemaphore = StubURLProtocol.releaseResponse
+        let responseData = StubURLProtocol.responseData
+        let responseStatusCode = StubURLProtocol.responseStatusCode
+
         // URLSession moves httpBody into httpBodyStream when passing to URLProtocol.
         var captured = request
         if captured.httpBody == nil, let stream = request.httpBodyStream {
@@ -60,17 +71,17 @@ final class StubURLProtocol: URLProtocol {
         StubURLProtocol.capturedRequests[url.absoluteString] = captured
         StubURLProtocol.requestCallCount[url.absoluteString, default: 0] += 1
 
-        StubURLProtocol.requestReceived?.signal()
-        StubURLProtocol.releaseResponse?.wait()
+        requestReceivedSemaphore?.signal()
+        releaseResponseSemaphore?.wait()
 
         let response = HTTPURLResponse(
             url: url,
-            statusCode: StubURLProtocol.responseStatusCode,
+            statusCode: responseStatusCode,
             httpVersion: "HTTP/1.1",
             headerFields: ["Content-Type": "application/json"]
         )!
         client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
-        client?.urlProtocol(self, didLoad: StubURLProtocol.responseData)
+        client?.urlProtocol(self, didLoad: responseData)
         client?.urlProtocolDidFinishLoading(self)
     }
 
