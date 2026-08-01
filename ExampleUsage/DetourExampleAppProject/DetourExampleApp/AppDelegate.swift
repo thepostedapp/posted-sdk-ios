@@ -30,38 +30,42 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         // Mount analytics once at startup.
         Posted.shared.mountAnalytics(config: postedConfig)
 
-        // Resolve initial deferred/universal link.
-        Posted.shared.resolveInitialLink(config: postedConfig, launchOptions: launchOptions) { result in
+        // Resolve the cold-start attribution branch (deferred or link-present) once.
+        // Fire-once: subsequent calls within the same install return the cached result.
+        Task { @MainActor in
+            let result = await Posted.shared.resolveAppLaunch(
+                config: postedConfig,
+                launchContext: .launchOptions(launchOptions)
+            )
             if let route = result.route {
                 self.logger.info("Initial route: \(route)")
             } else {
                 self.logger.info("No initial route")
             }
 
-            Task { @MainActor in
-                DetourDemoState.shared.markInitialLinkResolved()
-                DetourDemoState.shared.recordLinkResult(result, source: "cold_start")
-            }
+            DetourDemoState.shared.markInitialLinkResolved()
+            DetourDemoState.shared.recordLinkResult(result, source: "cold_start")
         }
 
         return true
     }
 
     // Custom scheme, e.g. posted://product/42 (the `posted` scheme is registered in Info.plist)
+    // Runtime links need no SDK call — parse the URL directly and navigate.
     func application(
         _ app: UIApplication,
         open url: URL,
         options: [UIApplication.OpenURLOptionsKey: Any] = [:]
     ) -> Bool {
         Task { @MainActor in
-            let result = await Posted.shared.processLink(url, config: postedConfig)
-            DetourDemoState.shared.recordLinkResult(result, source: "custom_scheme")
+            DetourDemoState.shared.appendLog("[custom_scheme] url=\(url.absoluteString)")
         }
 
         return true
     }
 
     // Universal links, e.g. https://<YOUR_UNIVERSAL_LINK_DOMAIN>/promo/offer
+    // Runtime links need no SDK call — parse the URL directly and navigate.
     func application(
         _ application: UIApplication,
         continue userActivity: NSUserActivity,
@@ -73,8 +77,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         }
 
         Task { @MainActor in
-            let result = await Posted.shared.processLink(url, config: postedConfig)
-            DetourDemoState.shared.recordLinkResult(result, source: "universal_link")
+            DetourDemoState.shared.appendLog("[universal_link] url=\(url.absoluteString)")
         }
 
         return true
