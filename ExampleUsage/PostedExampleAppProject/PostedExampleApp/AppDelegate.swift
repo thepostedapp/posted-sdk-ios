@@ -43,8 +43,8 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
                 self.logger.info("No initial route")
             }
 
-            DetourDemoState.shared.markInitialLinkResolved()
-            DetourDemoState.shared.recordLinkResult(result, source: "cold_start")
+            PostedDemoState.shared.markInitialLinkResolved()
+            PostedDemoState.shared.recordLinkResult(result, source: "cold_start")
         }
 
         return true
@@ -58,7 +58,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         options: [UIApplication.OpenURLOptionsKey: Any] = [:]
     ) -> Bool {
         Task { @MainActor in
-            DetourDemoState.shared.appendLog("[custom_scheme] url=\(url.absoluteString)")
+            PostedDemoState.shared.appendLog("[custom_scheme] url=\(url.absoluteString)")
         }
 
         return true
@@ -77,7 +77,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         }
 
         Task { @MainActor in
-            DetourDemoState.shared.appendLog("[universal_link] url=\(url.absoluteString)")
+            PostedDemoState.shared.appendLog("[universal_link] url=\(url.absoluteString)")
         }
 
         return true

@@ -14,11 +14,11 @@ You need a Posted account with an app configured. Sign up at [postedapp.com](htt
 
 ### 1. Open the project
 
-Open `DetourExampleAppProject/DetourExampleApp.xcodeproj` in Xcode.
+Open `PostedExampleAppProject/PostedExampleApp.xcodeproj` in Xcode.
 
 ### 2. Replace placeholders
 
-The following placeholders appear in `AppDelegate.swift`, `Info.plist`, and `DetourExampleApp.entitlements`:
+The following placeholders appear in `AppDelegate.swift`, `Info.plist`, and `PostedExampleApp.entitlements`:
 
 | Placeholder                    | Where to find it                        | Example value              |
 | ------------------------------ | --------------------------------------- | -------------------------- |
@@ -38,7 +38,7 @@ The example app's `Info.plist` ships with the `posted` URL scheme already regist
 
 ### 4. Configure Associated Domains
 
-In `DetourExampleApp.entitlements`, replace `<YOUR_UNIVERSAL_LINK_DOMAIN>` under `Associated Domains` with your Posted domain (e.g. `applinks:example.godetour.link`). <!-- TODO(B4): short-link/UL domain pending; Universal Links deferred for v1 -->
+In `PostedExampleApp.entitlements`, replace `<YOUR_UNIVERSAL_LINK_DOMAIN>` under `Associated Domains` with your Posted domain (e.g. `applinks:example.godetour.link`). <!-- TODO(B4): short-link/UL domain pending; Universal Links deferred for v1 -->
 
 ### 5. Run
 

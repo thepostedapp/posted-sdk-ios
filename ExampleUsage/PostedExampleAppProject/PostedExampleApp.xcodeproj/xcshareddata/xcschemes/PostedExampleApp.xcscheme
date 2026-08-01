@@ -16,9 +16,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "A4D1E0ED2EDDACAA004FA209"
-               BuildableName = "DetourExampleApp.app"
-               BlueprintName = "DetourExampleApp"
-               ReferencedContainer = "container:DetourExampleApp.xcodeproj">
+               BuildableName = "PostedExampleApp.app"
+               BlueprintName = "PostedExampleApp"
+               ReferencedContainer = "container:PostedExampleApp.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -36,9 +36,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "A4D1E0FF2EDDACAC004FA209"
-               BuildableName = "DetourExampleAppTests.xctest"
-               BlueprintName = "DetourExampleAppTests"
-               ReferencedContainer = "container:DetourExampleApp.xcodeproj">
+               BuildableName = "PostedExampleAppTests.xctest"
+               BlueprintName = "PostedExampleAppTests"
+               ReferencedContainer = "container:PostedExampleApp.xcodeproj">
             </BuildableReference>
          </TestableReference>
          <TestableReference
@@ -47,9 +47,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "A4D1E1092EDDACAC004FA209"
-               BuildableName = "DetourExampleAppUITests.xctest"
-               BlueprintName = "DetourExampleAppUITests"
-               ReferencedContainer = "container:DetourExampleApp.xcodeproj">
+               BuildableName = "PostedExampleAppUITests.xctest"
+               BlueprintName = "PostedExampleAppUITests"
+               ReferencedContainer = "container:PostedExampleApp.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -69,9 +69,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "A4D1E0ED2EDDACAA004FA209"
-            BuildableName = "DetourExampleApp.app"
-            BlueprintName = "DetourExampleApp"
-            ReferencedContainer = "container:DetourExampleApp.xcodeproj">
+            BuildableName = "PostedExampleApp.app"
+            BlueprintName = "PostedExampleApp"
+            ReferencedContainer = "container:PostedExampleApp.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -86,9 +86,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "A4D1E0ED2EDDACAA004FA209"
-            BuildableName = "DetourExampleApp.app"
-            BlueprintName = "DetourExampleApp"
-            ReferencedContainer = "container:DetourExampleApp.xcodeproj">
+            BuildableName = "PostedExampleApp.app"
+            BlueprintName = "PostedExampleApp"
+            ReferencedContainer = "container:PostedExampleApp.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

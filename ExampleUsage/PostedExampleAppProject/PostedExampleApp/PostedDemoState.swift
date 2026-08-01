@@ -3,8 +3,8 @@ import Combine
 import PostedSDK
 
 @MainActor
-final class DetourDemoState: ObservableObject {
-    static let shared = DetourDemoState()
+final class PostedDemoState: ObservableObject {
+    static let shared = PostedDemoState()
 
     @Published var isResolvingInitialLink: Bool = true
     @Published var lastRoute: String = "No route yet"

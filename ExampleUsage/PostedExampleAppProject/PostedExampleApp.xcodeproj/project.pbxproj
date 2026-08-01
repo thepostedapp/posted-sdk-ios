@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		A4CFC2D12F4779EA007F84E5 /* Detour in Frameworks */ = {isa = PBXBuildFile; productRef = A4CFC2D02F4779EA007F84E5 /* Detour */; };
+		A4CFC2D12F4779EA007F84E5 /* PostedSDK in Frameworks */ = {isa = PBXBuildFile; productRef = A4CFC2D02F4779EA007F84E5 /* PostedSDK */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -16,52 +16,52 @@
 			containerPortal = A4D1E0E62EDDACAA004FA209 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = A4D1E0ED2EDDACAA004FA209;
-			remoteInfo = DetourExampleApp;
+			remoteInfo = PostedExampleApp;
 		};
 		A4D1E10B2EDDACAC004FA209 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = A4D1E0E62EDDACAA004FA209 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = A4D1E0ED2EDDACAA004FA209;
-			remoteInfo = DetourExampleApp;
+			remoteInfo = PostedExampleApp;
 		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		A4CFC2CE2F477979007F84E5 /* Package.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Package.swift; path = ../../Package.swift; sourceTree = "<group>"; };
-		A4CFC2CF2F4779D2007F84E5 /* Detour */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = Detour; path = ../..; sourceTree = SOURCE_ROOT; };
-		A4D1E0EE2EDDACAA004FA209 /* DetourExampleApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DetourExampleApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		A4D1E1002EDDACAC004FA209 /* DetourExampleAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DetourExampleAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		A4D1E10A2EDDACAC004FA209 /* DetourExampleAppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DetourExampleAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A4CFC2CF2F4779D2007F84E5 /* PostedSDK */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = PostedSDK; path = ../..; sourceTree = SOURCE_ROOT; };
+		A4D1E0EE2EDDACAA004FA209 /* PostedExampleApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PostedExampleApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A4D1E1002EDDACAC004FA209 /* PostedExampleAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PostedExampleAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A4D1E10A2EDDACAC004FA209 /* PostedExampleAppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PostedExampleAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		A4D1E14F2EF42D3B004FA209 /* Exceptions for "DetourExampleApp" folder in "DetourExampleApp" target */ = {
+		A4D1E14F2EF42D3B004FA209 /* Exceptions for "PostedExampleApp" folder in "PostedExampleApp" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
 			);
-			target = A4D1E0ED2EDDACAA004FA209 /* DetourExampleApp */;
+			target = A4D1E0ED2EDDACAA004FA209 /* PostedExampleApp */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		A4D1E0F02EDDACAA004FA209 /* DetourExampleApp */ = {
+		A4D1E0F02EDDACAA004FA209 /* PostedExampleApp */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				A4D1E14F2EF42D3B004FA209 /* Exceptions for "DetourExampleApp" folder in "DetourExampleApp" target */,
+				A4D1E14F2EF42D3B004FA209 /* Exceptions for "PostedExampleApp" folder in "PostedExampleApp" target */,
 			);
-			path = DetourExampleApp;
+			path = PostedExampleApp;
 			sourceTree = "<group>";
 		};
-		A4D1E1032EDDACAC004FA209 /* DetourExampleAppTests */ = {
+		A4D1E1032EDDACAC004FA209 /* PostedExampleAppTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = DetourExampleAppTests;
+			path = PostedExampleAppTests;
 			sourceTree = "<group>";
 		};
-		A4D1E10D2EDDACAC004FA209 /* DetourExampleAppUITests */ = {
+		A4D1E10D2EDDACAC004FA209 /* PostedExampleAppUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = DetourExampleAppUITests;
+			path = PostedExampleAppUITests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -71,7 +71,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A4CFC2D12F4779EA007F84E5 /* Detour in Frameworks */,
+				A4CFC2D12F4779EA007F84E5 /* PostedSDK in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -95,9 +95,9 @@
 		A4D1E0E52EDDACAA004FA209 = {
 			isa = PBXGroup;
 			children = (
-				A4D1E0F02EDDACAA004FA209 /* DetourExampleApp */,
-				A4D1E1032EDDACAC004FA209 /* DetourExampleAppTests */,
-				A4D1E10D2EDDACAC004FA209 /* DetourExampleAppUITests */,
+				A4D1E0F02EDDACAA004FA209 /* PostedExampleApp */,
+				A4D1E1032EDDACAC004FA209 /* PostedExampleAppTests */,
+				A4D1E10D2EDDACAC004FA209 /* PostedExampleAppUITests */,
 				A4D1E0EF2EDDACAA004FA209 /* Products */,
 				A4D1E11E2EDDAF13004FA209 /* Frameworks */,
 			);
@@ -106,9 +106,9 @@
 		A4D1E0EF2EDDACAA004FA209 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				A4D1E0EE2EDDACAA004FA209 /* DetourExampleApp.app */,
-				A4D1E1002EDDACAC004FA209 /* DetourExampleAppTests.xctest */,
-				A4D1E10A2EDDACAC004FA209 /* DetourExampleAppUITests.xctest */,
+				A4D1E0EE2EDDACAA004FA209 /* PostedExampleApp.app */,
+				A4D1E1002EDDACAC004FA209 /* PostedExampleAppTests.xctest */,
+				A4D1E10A2EDDACAC004FA209 /* PostedExampleAppUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -116,7 +116,7 @@
 		A4D1E11E2EDDAF13004FA209 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				A4CFC2CF2F4779D2007F84E5 /* Detour */,
+				A4CFC2CF2F4779D2007F84E5 /* PostedSDK */,
 				A4CFC2CE2F477979007F84E5 /* Package.swift */,
 			);
 			name = Frameworks;
@@ -125,9 +125,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		A4D1E0ED2EDDACAA004FA209 /* DetourExampleApp */ = {
+		A4D1E0ED2EDDACAA004FA209 /* PostedExampleApp */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = A4D1E1142EDDACAC004FA209 /* Build configuration list for PBXNativeTarget "DetourExampleApp" */;
+			buildConfigurationList = A4D1E1142EDDACAC004FA209 /* Build configuration list for PBXNativeTarget "PostedExampleApp" */;
 			buildPhases = (
 				A4D1E0EA2EDDACAA004FA209 /* Sources */,
 				A4D1E0EB2EDDACAA004FA209 /* Frameworks */,
@@ -138,19 +138,19 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				A4D1E0F02EDDACAA004FA209 /* DetourExampleApp */,
+				A4D1E0F02EDDACAA004FA209 /* PostedExampleApp */,
 			);
-			name = DetourExampleApp;
+			name = PostedExampleApp;
 			packageProductDependencies = (
-				A4CFC2D02F4779EA007F84E5 /* Detour */,
+				A4CFC2D02F4779EA007F84E5 /* PostedSDK */,
 			);
-			productName = DetourExampleApp;
-			productReference = A4D1E0EE2EDDACAA004FA209 /* DetourExampleApp.app */;
+			productName = PostedExampleApp;
+			productReference = A4D1E0EE2EDDACAA004FA209 /* PostedExampleApp.app */;
 			productType = "com.apple.product-type.application";
 		};
-		A4D1E0FF2EDDACAC004FA209 /* DetourExampleAppTests */ = {
+		A4D1E0FF2EDDACAC004FA209 /* PostedExampleAppTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = A4D1E1172EDDACAC004FA209 /* Build configuration list for PBXNativeTarget "DetourExampleAppTests" */;
+			buildConfigurationList = A4D1E1172EDDACAC004FA209 /* Build configuration list for PBXNativeTarget "PostedExampleAppTests" */;
 			buildPhases = (
 				A4D1E0FC2EDDACAC004FA209 /* Sources */,
 				A4D1E0FD2EDDACAC004FA209 /* Frameworks */,
@@ -162,18 +162,18 @@
 				A4D1E1022EDDACAC004FA209 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				A4D1E1032EDDACAC004FA209 /* DetourExampleAppTests */,
+				A4D1E1032EDDACAC004FA209 /* PostedExampleAppTests */,
 			);
-			name = DetourExampleAppTests;
+			name = PostedExampleAppTests;
 			packageProductDependencies = (
 			);
-			productName = DetourExampleAppTests;
-			productReference = A4D1E1002EDDACAC004FA209 /* DetourExampleAppTests.xctest */;
+			productName = PostedExampleAppTests;
+			productReference = A4D1E1002EDDACAC004FA209 /* PostedExampleAppTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		A4D1E1092EDDACAC004FA209 /* DetourExampleAppUITests */ = {
+		A4D1E1092EDDACAC004FA209 /* PostedExampleAppUITests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = A4D1E11A2EDDACAC004FA209 /* Build configuration list for PBXNativeTarget "DetourExampleAppUITests" */;
+			buildConfigurationList = A4D1E11A2EDDACAC004FA209 /* Build configuration list for PBXNativeTarget "PostedExampleAppUITests" */;
 			buildPhases = (
 				A4D1E1062EDDACAC004FA209 /* Sources */,
 				A4D1E1072EDDACAC004FA209 /* Frameworks */,
@@ -185,13 +185,13 @@
 				A4D1E10C2EDDACAC004FA209 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				A4D1E10D2EDDACAC004FA209 /* DetourExampleAppUITests */,
+				A4D1E10D2EDDACAC004FA209 /* PostedExampleAppUITests */,
 			);
-			name = DetourExampleAppUITests;
+			name = PostedExampleAppUITests;
 			packageProductDependencies = (
 			);
-			productName = DetourExampleAppUITests;
-			productReference = A4D1E10A2EDDACAC004FA209 /* DetourExampleAppUITests.xctest */;
+			productName = PostedExampleAppUITests;
+			productReference = A4D1E10A2EDDACAC004FA209 /* PostedExampleAppUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
@@ -217,7 +217,7 @@
 					};
 				};
 			};
-			buildConfigurationList = A4D1E0E92EDDACAA004FA209 /* Build configuration list for PBXProject "DetourExampleApp" */;
+			buildConfigurationList = A4D1E0E92EDDACAA004FA209 /* Build configuration list for PBXProject "PostedExampleApp" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -234,9 +234,9 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				A4D1E0ED2EDDACAA004FA209 /* DetourExampleApp */,
-				A4D1E0FF2EDDACAC004FA209 /* DetourExampleAppTests */,
-				A4D1E1092EDDACAC004FA209 /* DetourExampleAppUITests */,
+				A4D1E0ED2EDDACAA004FA209 /* PostedExampleApp */,
+				A4D1E0FF2EDDACAC004FA209 /* PostedExampleAppTests */,
+				A4D1E1092EDDACAC004FA209 /* PostedExampleAppUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -292,12 +292,12 @@
 /* Begin PBXTargetDependency section */
 		A4D1E1022EDDACAC004FA209 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = A4D1E0ED2EDDACAA004FA209 /* DetourExampleApp */;
+			target = A4D1E0ED2EDDACAA004FA209 /* PostedExampleApp */;
 			targetProxy = A4D1E1012EDDACAC004FA209 /* PBXContainerItemProxy */;
 		};
 		A4D1E10C2EDDACAC004FA209 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = A4D1E0ED2EDDACAA004FA209 /* DetourExampleApp */;
+			target = A4D1E0ED2EDDACAA004FA209 /* PostedExampleApp */;
 			targetProxy = A4D1E10B2EDDACAC004FA209 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -429,13 +429,13 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = DetourExampleApp/DetourExampleApp.entitlements;
+				CODE_SIGN_ENTITLEMENTS = PostedExampleApp/PostedExampleApp.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = J5FM626PE2;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = DetourExampleApp/Info.plist;
+				INFOPLIST_FILE = PostedExampleApp/Info.plist;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -445,7 +445,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.example.DetourExampleApp;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.PostedExampleApp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -462,13 +462,13 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = DetourExampleApp/DetourExampleApp.entitlements;
+				CODE_SIGN_ENTITLEMENTS = PostedExampleApp/PostedExampleApp.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = J5FM626PE2;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = DetourExampleApp/Info.plist;
+				INFOPLIST_FILE = PostedExampleApp/Info.plist;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -478,7 +478,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.example.DetourExampleApp;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.PostedExampleApp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -500,7 +500,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.1;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.example.DetourExampleAppTests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.PostedExampleAppTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -508,7 +508,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/DetourExampleApp.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/DetourExampleApp";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/PostedExampleApp.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/PostedExampleApp";
 			};
 			name = Debug;
 		};
@@ -522,7 +522,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.1;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.example.DetourExampleAppTests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.PostedExampleAppTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -530,7 +530,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/DetourExampleApp.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/DetourExampleApp";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/PostedExampleApp.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/PostedExampleApp";
 			};
 			name = Release;
 		};
@@ -542,7 +542,7 @@
 				DEVELOPMENT_TEAM = J5FM626PE2;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.example.DetourExampleAppUITests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.PostedExampleAppUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -550,7 +550,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = DetourExampleApp;
+				TEST_TARGET_NAME = PostedExampleApp;
 			};
 			name = Debug;
 		};
@@ -562,7 +562,7 @@
 				DEVELOPMENT_TEAM = J5FM626PE2;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.example.DetourExampleAppUITests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.PostedExampleAppUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -570,14 +570,14 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = DetourExampleApp;
+				TEST_TARGET_NAME = PostedExampleApp;
 			};
 			name = Release;
 		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		A4D1E0E92EDDACAA004FA209 /* Build configuration list for PBXProject "DetourExampleApp" */ = {
+		A4D1E0E92EDDACAA004FA209 /* Build configuration list for PBXProject "PostedExampleApp" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				A4D1E1122EDDACAC004FA209 /* Debug */,
@@ -586,7 +586,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		A4D1E1142EDDACAC004FA209 /* Build configuration list for PBXNativeTarget "DetourExampleApp" */ = {
+		A4D1E1142EDDACAC004FA209 /* Build configuration list for PBXNativeTarget "PostedExampleApp" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				A4D1E1152EDDACAC004FA209 /* Debug */,
@@ -595,7 +595,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		A4D1E1172EDDACAC004FA209 /* Build configuration list for PBXNativeTarget "DetourExampleAppTests" */ = {
+		A4D1E1172EDDACAC004FA209 /* Build configuration list for PBXNativeTarget "PostedExampleAppTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				A4D1E1182EDDACAC004FA209 /* Debug */,
@@ -604,7 +604,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		A4D1E11A2EDDACAC004FA209 /* Build configuration list for PBXNativeTarget "DetourExampleAppUITests" */ = {
+		A4D1E11A2EDDACAC004FA209 /* Build configuration list for PBXNativeTarget "PostedExampleAppUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				A4D1E11B2EDDACAC004FA209 /* Debug */,
@@ -623,10 +623,10 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		A4CFC2D02F4779EA007F84E5 /* Detour */ = {
+		A4CFC2D02F4779EA007F84E5 /* PostedSDK */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = A4CFC2D22F477A0B007F84E5 /* XCLocalSwiftPackageReference "../.." */;
-			productName = Detour;
+			productName = PostedSDK;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
