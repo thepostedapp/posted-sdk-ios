@@ -9,6 +9,19 @@ public enum LaunchContext: @unchecked Sendable {
     case connectionOptions(UIScene.ConnectionOptions)
 }
 
+// Abstracts the subset of UIScene.ConnectionOptions that resolveInitialLink's connectionOptions
+// overload maps into a launch URL. UIScene.ConnectionOptions has no public initializer, so this
+// seam is what lets that mapping be exercised with a fake conformance in unit tests (POS-173).
+protocol ConnectionOptionsMapping {
+    var mappedURLContextURL: URL? { get }
+    var mappedUserActivities: [NSUserActivity] { get }
+}
+
+extension UIScene.ConnectionOptions: ConnectionOptionsMapping {
+    var mappedURLContextURL: URL? { urlContexts.first?.url }
+    var mappedUserActivities: [NSUserActivity] { Array(userActivities) }
+}
+
 @MainActor
 public class Posted {
     public static let shared = Posted()
@@ -149,8 +162,8 @@ public class Posted {
         }
     }
 
-    private func browsingWebActivities(from connectionOptions: UIScene.ConnectionOptions) -> [NSUserActivity] {
-        connectionOptions.userActivities.filter { $0.activityType == NSUserActivityTypeBrowsingWeb }
+    private func browsingWebActivities(from connectionOptions: ConnectionOptionsMapping) -> [NSUserActivity] {
+        connectionOptions.mappedUserActivities.filter { $0.activityType == NSUserActivityTypeBrowsingWeb }
     }
 
     // Converts a URL into a PostedResult with a parsed route.
@@ -318,17 +331,24 @@ public class Posted {
                 .first { !LinkUtils.isInfrastructureUrl($0.absoluteString) }
 
         case .connectionOptions(let connOptions):
-            if let url = connOptions.urlContexts.first?.url,
-               !LinkUtils.isInfrastructureUrl(url.absoluteString) {
-                return url
-            }
-            return browsingWebActivities(from: connOptions)
-                .compactMap(\.webpageURL)
-                .first { !LinkUtils.isInfrastructureUrl($0.absoluteString) }
+            return _extractLaunchURL(fromConnectionOptions: connOptions)
 
         case .none:
             return nil
         }
+    }
+
+    // Internal so tests can exercise the connectionOptions -> launch URL mapping in isolation
+    // with a fake ConnectionOptionsMapping conformance (POS-173) — UIScene.ConnectionOptions
+    // itself has no public initializer and cannot be fabricated in a unit test.
+    func _extractLaunchURL(fromConnectionOptions connOptions: ConnectionOptionsMapping) -> URL? {
+        if let url = connOptions.mappedURLContextURL,
+           !LinkUtils.isInfrastructureUrl(url.absoluteString) {
+            return url
+        }
+        return browsingWebActivities(from: connOptions)
+            .compactMap(\.webpageURL)
+            .first { !LinkUtils.isInfrastructureUrl($0.absoluteString) }
     }
 
     private func resolveLinkPresent(url: URL, config: PostedConfig, session: URLSession) async -> PostedResult {
