@@ -31,6 +31,13 @@ All notable changes to PostedSDK iOS are documented here.
   crashing. Call `resetSession()` to re-arm (testing only).
 - **Defensive flag–cache consistency** — the fire-once resolved flag is only set after the
   result is successfully encoded to the cache; no silent divergence between flag and blob.
+- **`PostedResult.resolutionFailed`** — public read-only `Bool` distinguishing a genuine
+  network/transport failure from a legitimate "asked the server, no match" response (both
+  previously surfaced identically as `processed: true, link: nil`). Matches the discriminator
+  `android-detour`'s `LinkResult.Error` case already exposes, closing the cross-platform gap for
+  consumers (e.g. the Flutter plugin) that must skip fire-once caching on failure. Kept out of the
+  persisted fire-once cache envelope's JSON — read it only from a fresh `resolveAppLaunch` /
+  `resolveInitialLink` completion result; a reloaded/cached result always reports `false`.
 
 ### Deprecated
 

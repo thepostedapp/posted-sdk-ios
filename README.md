@@ -245,6 +245,10 @@ public struct PostedConfig {
 public struct PostedResult {
     public let processed: Bool
     public let link: PostedLink?
+    // True on a genuine network/transport failure, false otherwise (including a legitimate
+    // "asked the server, no match" response). Only meaningful on a fresh completion result —
+    // a reloaded/cached result always reports false.
+    public let resolutionFailed: Bool
 
     // Convenience accessors
     public var route: String?
