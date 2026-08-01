@@ -195,7 +195,7 @@ let config = PostedConfig(
 
 ## Analytics
 
-Analytics are mounted automatically when you call `resolveInitialLink`. To log custom events use the predefined `PostedEventName` enum or a custom string:
+Analytics are mounted automatically when you call `resolveAppLaunch`. To log custom events use the predefined `PostedEventName` enum or a custom string:
 
 <details>
 <summary>Analytics example</summary>
@@ -208,7 +208,7 @@ PostedAnalytics.logRetention("week_1")
 
 </details>
 
-If you need analytics without calling `resolveInitialLink`, mount and unmount manually:
+If you need analytics without calling `resolveAppLaunch`, mount and unmount manually:
 
 ```swift
 Posted.shared.mountAnalytics(config: config)
