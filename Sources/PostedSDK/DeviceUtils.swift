@@ -5,15 +5,20 @@ import WebKit
 class DeviceUtils {
     private static let tag = "FingerprintCollector"
 
+    /// Scoped per-call (POS-472): a shared static WKWebView let two genuinely concurrent
+    /// resolutions race on the same instance — one call's teardown could deallocate the
+    /// other's still-in-flight WKWebView, hanging its continuation forever. Each call now
+    /// owns its own WKWebView, retained only by this closure's capture, so concurrent calls
+    /// cannot interfere with one another.
+    /// Internal (not private) so the concurrency test (POS-472) can drive two overlapping
+    /// calls directly without going through the full `getFingerprint` path. Not part of the
+    /// SDK's public API surface.
     @MainActor
-    private static var webView: WKWebView?
-
-    @MainActor
-    private static func getRealUserAgent() async -> String {
+    static func getRealUserAgent() async -> String {
         return await withCheckedContinuation { continuation in
-            webView = WKWebView()
+            let webView = WKWebView()
 
-            webView?.evaluateJavaScript("navigator.userAgent") { result, error in
+            webView.evaluateJavaScript("navigator.userAgent") { result, error in
                 if let error = error {
                     PostedLogger.warn(tag, "[Posted:FINGERPRINT] WebKit userAgent retrieval failed: \(error.localizedDescription)")
                 }
@@ -25,7 +30,7 @@ class DeviceUtils {
                     continuation.resume(returning: "")
                 }
 
-                webView = nil
+                _ = webView
             }
         }
     }
