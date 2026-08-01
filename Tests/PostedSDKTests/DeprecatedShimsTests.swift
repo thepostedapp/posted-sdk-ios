@@ -78,7 +78,9 @@ final class DeprecatedShimsTests: XCTestCase {
     // UIScene.ConnectionOptions has no public initializer, so the connectionOptions overload
     // cannot be exercised by fabricating that argument in unit tests. Instead we test
     // _resolveInitialLink — the shared delegation core that both public overloads call —
-    // proving the same fire-once/no-new-request contract for both paths.
+    // proving the same fire-once/no-new-request contract for both paths. The connectionOptions
+    // -> LaunchContext.connectionOptions argument mapping itself is covered separately in
+    // ConnectionOptionsMappingTests.swift via the `ConnectionOptionsMapping` seam (POS-173).
     func testResolveInitialLinkSharedHelperDelegatesToResolveAppLaunch() async {
         StubURLProtocol.responseData = #"{"link":"https://example.com/scene-referral"}"#.data(using: .utf8)!
         let cached = await Posted.shared._resolveAppLaunch(config: config, launchContext: nil, session: session)
@@ -98,9 +100,9 @@ final class DeprecatedShimsTests: XCTestCase {
 
     // MARK: - Deprecation warn (POS-174)
 
-    // Verifies the launchOptions overload emits exactly one deprecation warning.
-    // The connectionOptions overload cannot be called from unit tests (UIScene.ConnectionOptions
-    // has no public initialiser); that gap is tracked in POS-173.
+    // Verifies the launchOptions overload emits exactly one deprecation warning. The
+    // connectionOptions overload itself still cannot be called from unit tests (UIScene.ConnectionOptions
+    // has no public initialiser), so its warning emission is not separately assertable here.
     func testResolveInitialLinkLaunchOptionsEmitsDeprecationWarn() async {
         // Pre-warm fire-once cache via the stub session so resolveAppLaunch returns immediately.
         StubURLProtocol.responseData = #"{"link":"https://example.com/referral"}"#.data(using: .utf8)!
