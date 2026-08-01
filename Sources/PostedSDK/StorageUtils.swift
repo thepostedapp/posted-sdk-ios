@@ -56,6 +56,14 @@ class StorageUtils {
         UserDefaults.standard.set(true, forKey: Constants.attributionResolvedKey)
     }
 
+    // Ordering is the safety mechanism, not an implementation detail: the flag MUST be removed
+    // BEFORE the blob. UserDefaults has no multi-remove/batch API (unlike Android's
+    // SharedPreferences.Editor, see POS-346), so a crash/kill between these two calls can tear
+    // this clear. Flag-first means the only observable torn state is "flag gone, blob present,"
+    // which the read path (isAttributionResolved() && getCachedAttributionResult() must both
+    // hold, see Posted.swift's resolveAppLaunch) already treats as unresolved and safely
+    // re-resolves. Reordering to blob-first would reintroduce a hazard: "flag present, blob
+    // gone" reads as resolved with a nil cache, which callers do not defend against.
     static func clearAttributionResolved() {
         UserDefaults.standard.removeObject(forKey: Constants.attributionResolvedKey)
         UserDefaults.standard.removeObject(forKey: Constants.cachedAttributionResultKey)
