@@ -2,7 +2,7 @@ import SwiftUI
 import PostedSDK
 
 struct ContentView: View {
-    @ObservedObject private var demoState = DetourDemoState.shared
+    @ObservedObject private var demoState = PostedDemoState.shared
 
     var body: some View {
         Group {

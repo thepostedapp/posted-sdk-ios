@@ -1,6 +1,6 @@
 import XCTest
 
-final class DetourExampleAppUITestsLaunchTests: XCTestCase {
+final class PostedExampleAppUITestsLaunchTests: XCTestCase {
 
     override class var runsForEachTargetApplicationUIConfiguration: Bool {
         true

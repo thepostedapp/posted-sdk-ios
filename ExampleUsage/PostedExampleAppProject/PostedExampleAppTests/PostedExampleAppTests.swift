@@ -1,7 +1,7 @@
 import Testing
-@testable import DetourExampleApp
+@testable import PostedExampleApp
 
-struct DetourExampleAppTests {
+struct PostedExampleAppTests {
 
     @Test func example() async throws {
         // Write your test here and use APIs like `#expect(...)` to check expected conditions.
