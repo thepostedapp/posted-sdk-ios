@@ -262,6 +262,101 @@ final class ResolveAppLaunchTests: XCTestCase {
         XCTAssertEqual(next.link?.url, "https://example.com/after-reset")
     }
 
+    // MARK: - resetSession mid-resolve must not clobber a fresher in-flight resolve (POS-267,
+    // mirrors RN POS-154's inFlight-clear-under-lock guard)
+
+    // A resolve started before resetSession() ("stale") settling after the reset must not persist
+    // its result or leave stale in-flight bookkeeping behind for a later caller to join. Two real
+    // concurrent network legs (stale + fresh, both genuinely in flight at once) reliably escape
+    // StubURLProtocol in CI — two independent ephemeral sessions racing on a shared static analyzer
+    // both hit the real network and time out, hanging the test's semaphores rather than the SDK
+    // call under test. So this proves the epoch guard with exactly one network leg in flight at a
+    // time: gate `stale`, reset, assert the bookkeeping was abandoned synchronously (no second live
+    // request needed for that), release `stale` and assert it didn't clobber anything, THEN run
+    // `fresh` only once `stale` has fully settled. True concurrent third-caller de-dup is POS-139's
+    // single-flight territory, not this epoch-guard invariant, and is intentionally not re-driven
+    // here.
+    //
+    // Driven through the link-present branch (sendUniversalLinkClick), NOT the deferred branch:
+    // the deferred branch's DeviceUtils.getFingerprint() drives a shared-static WKWebView, which
+    // has its own pre-existing race (tracked separately as POS-472) that surfaces as a CI hang the
+    // moment two real resolutions run concurrently.
+    func testResetSessionMidResolveDoesNotClobberSubsequentDedup() async throws {
+        let staleURL = URL(string: "https://example.com/campaign/stale/click")!
+        let freshURL = URL(string: "https://example.com/campaign/fresh/click")!
+
+        let staleReceived = DispatchSemaphore(value: 0)
+        let staleRelease = DispatchSemaphore(value: 0)
+        StubURLProtocol.requestReceived = staleReceived
+        StubURLProtocol.releaseResponse = staleRelease
+        StubURLProtocol.responseData = #"{"allowed":true}"#.data(using: .utf8)!
+
+        async let stale = Posted.shared._resolveAppLaunch(
+            config: config,
+            launchContext: .launchOptions([.url: staleURL]),
+            session: session
+        )
+        // `startLoading()` itself signals this, proving `stale` is genuinely in-flight rather than
+        // relying on a timing guess.
+        await waitForSemaphore(staleReceived)
+
+        let generationBeforeReset = Posted.shared.debugResolutionGeneration
+        XCTAssertTrue(
+            Posted.shared.debugHasInFlightResolutionTask,
+            "stale must be registered as in-flight before reset"
+        )
+
+        // resetSession() lands while `stale` is still parked on the network.
+        Posted.shared.resetSession()
+
+        // The epoch-guard proof: resetSession() must bump the generation and abandon the in-flight
+        // pointer synchronously, before stale ever settles — no second live network call needed to
+        // show that a caller arriving right now would no longer see stale's task.
+        XCTAssertEqual(
+            Posted.shared.debugResolutionGeneration, generationBeforeReset + 1,
+            "resetSession must bump the generation synchronously"
+        )
+        XCTAssertFalse(
+            Posted.shared.debugHasInFlightResolutionTask,
+            "resetSession must abandon the stale in-flight pointer synchronously, before stale settles"
+        )
+
+        // Let `stale` complete now that reset has already landed.
+        staleRelease.signal()
+        let staleResult = await stale
+
+        // The actual clobber assertion POS-267 cares about: a resolution in flight across
+        // resetSession() must not re-arm fire-once or repopulate the cache once it settles.
+        XCTAssertFalse(
+            StorageUtils.isAttributionResolved(),
+            "A stale resolution settling after reset must not re-arm fire-once"
+        )
+        XCTAssertNil(
+            StorageUtils.getCachedAttributionResult(),
+            "A stale resolution settling after reset must not repopulate the cache"
+        )
+        XCTAssertEqual(staleResult.link?.url, staleURL.absoluteString, "stale's own caller still observes its own result")
+
+        // Only now — stale fully settled, nothing concurrent — does a fresh post-reset resolution
+        // run, proving the next launch re-resolves cleanly under the new generation.
+        StubURLProtocol.requestReceived = nil
+        StubURLProtocol.releaseResponse = nil
+        StubURLProtocol.responseData = #"{"allowed":true}"#.data(using: .utf8)!
+
+        let freshResult = await Posted.shared._resolveAppLaunch(
+            config: config,
+            launchContext: .launchOptions([.url: freshURL]),
+            session: session
+        )
+
+        XCTAssertEqual(
+            StubURLProtocol.requestCallCount[Self.universalClickURL], 2,
+            "stale and fresh each fire exactly one network call"
+        )
+        XCTAssertEqual(freshResult.link?.url, freshURL.absoluteString)
+        XCTAssertTrue(StorageUtils.isAttributionResolved(), "fresh's resolution must re-arm fire-once for the new generation")
+    }
+
     private func waitForSemaphore(_ semaphore: DispatchSemaphore) async {
         await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
             DispatchQueue.global().async {
