@@ -237,13 +237,20 @@ final class ResolveAppLaunchTests: XCTestCase {
     // task and fire its own duplicate network call instead of de-duping against `fresh` — the
     // "double-fire" companion of the fire-once-clobber race covered above.
     func testResetSessionMidResolveDoesNotClobberSubsequentDedup() async throws {
+        // `stale` gets its own URLSession instance so its blocked `startLoading()` (parked on
+        // `staleRelease.wait()`) cannot starve `fresh`'s load: a bare `URLSession(configuration:)`
+        // with no delegate/queue drives protocol loading through one private serial queue per
+        // session, so two semaphore-gated loads left open at once on the SAME session can never
+        // both reach `startLoading()` — the second parks forever behind the first, hanging the
+        // test. Separate sessions each get their own queue, so `fresh` isn't blocked by `stale`.
+        let staleSession = StubURLProtocol.makeSession()
         let staleReceived = DispatchSemaphore(value: 0)
         let staleRelease = DispatchSemaphore(value: 0)
         StubURLProtocol.requestReceived = staleReceived
         StubURLProtocol.releaseResponse = staleRelease
         StubURLProtocol.responseData = #"{"link":"https://example.com/stale"}"#.data(using: .utf8)!
 
-        async let stale = Posted.shared._resolveAppLaunch(config: config, launchContext: nil, session: session)
+        async let stale = Posted.shared._resolveAppLaunch(config: config, launchContext: nil, session: staleSession)
         await waitForSemaphore(staleReceived)
 
         // resetSession() lands while `stale` is still parked on the network.
