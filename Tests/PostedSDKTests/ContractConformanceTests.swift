@@ -187,25 +187,21 @@ final class ContractConformanceTests: XCTestCase {
     // POS-464: a server error body whose "error" field is a non-container top-level value (e.g. a
     // raw number) is not a valid JSONSerialization root object. Re-encoding it for the error message
     // must degrade gracefully instead of raising an uncaught NSException.
-    func testMatchLinkNonContainerErrorFieldDoesNotCrash() throws {
+    func testMatchLinkNonContainerErrorFieldDoesNotCrash() {
         StubURLProtocol.responseStatusCode = 400
         StubURLProtocol.responseData = #"{"error":42}"#.data(using: .utf8)!
         let exp = expectation(description: "matchLink completes")
 
-        var received: PostedResult?
         PostedNetwork.matchLink(
             config: testConfig,
             fingerprint: makeFingerprint(),
             session: session
         ) { result in
-            received = result
+            XCTAssertTrue(result.resolutionFailed, "non-2xx response must surface as a resolution failure")
             exp.fulfill()
         }
 
         wait(for: [exp], timeout: 3.0)
-
-        let result = try XCTUnwrap(received)
-        XCTAssertTrue(result.resolutionFailed, "non-2xx response must surface as a resolution failure")
     }
 
     // MARK: - resolve-short
