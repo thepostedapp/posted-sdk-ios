@@ -75,11 +75,13 @@ struct LocaleTag: Codable {
 public struct PostedResult: Sendable, Codable {
     public let processed: Bool
     public let link: PostedLink?
-    // Internal-only: true when this result came from a genuine network/transport failure rather
-    // than a legitimate "asked the server, no match" response. Deliberately kept out of
-    // `CodingKeys` so the persisted fire-once cache envelope's JSON shape never changes — it must
-    // stay decodable by installs that cached a result before this field existed.
-    let resolutionFailed: Bool
+    // True when this result came from a genuine network/transport failure rather than a
+    // legitimate "asked the server, no match" response. Deliberately kept out of `CodingKeys` so
+    // the persisted fire-once cache envelope's JSON shape never changes — it must stay decodable
+    // by installs that cached a result before this field existed. Only read this from a FRESH
+    // completion result: a reloaded/cached result always decodes this as `false`, since fire-once
+    // must never treat a persisted result as a failure.
+    public let resolutionFailed: Bool
 
     public init(processed: Bool, link: PostedLink?) {
         self.processed = processed
