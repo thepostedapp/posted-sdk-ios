@@ -85,6 +85,50 @@ final class DetectPatternsTimeoutTests: XCTestCase {
         XCTAssertTrue(result, "a callback that arrives before the timeout must win and return its value")
     }
 
+    // MARK: - Timeout signal (POS-246)
+
+    func testNeverFiringCallbackEmitsSignalExactlyOnce() async {
+        var capturedSignals: [String] = []
+        PostedLogger._signalSink = { _, name in capturedSignals.append(name) }
+        defer { PostedLogger._signalSink = nil }
+
+        _ = await DeviceUtils.probableWebURLGate(
+            timeoutNanoseconds: 50_000_000  // 50ms
+        ) { _ in
+            // Never fires — the timeout arm must win and emit the signal.
+        }
+
+        XCTAssertEqual(capturedSignals, ["pasteboard_detect_patterns_gate_timeout"], "a never-firing callback must emit the gate-timeout signal exactly once")
+    }
+
+    func testImmediateHitDoesNotEmitSignal() async {
+        var capturedSignals: [String] = []
+        PostedLogger._signalSink = { _, name in capturedSignals.append(name) }
+        defer { PostedLogger._signalSink = nil }
+
+        _ = await DeviceUtils.probableWebURLGate(
+            timeoutNanoseconds: DeviceUtils.detectPatternsTimeoutNanoseconds
+        ) { resume in
+            resume(true)
+        }
+
+        XCTAssertTrue(capturedSignals.isEmpty, "a callback winning the race must not emit the gate-timeout signal")
+    }
+
+    func testImmediateMissDoesNotEmitSignal() async {
+        var capturedSignals: [String] = []
+        PostedLogger._signalSink = { _, name in capturedSignals.append(name) }
+        defer { PostedLogger._signalSink = nil }
+
+        _ = await DeviceUtils.probableWebURLGate(
+            timeoutNanoseconds: DeviceUtils.detectPatternsTimeoutNanoseconds
+        ) { resume in
+            resume(false)
+        }
+
+        XCTAssertTrue(capturedSignals.isEmpty, "a callback winning the race must not emit the gate-timeout signal, even when it reports no probable web URL")
+    }
+
     // MARK: - Once-guard invariant
 
     func testResumeOnceGuardRunsBodyExactlyOnce() {

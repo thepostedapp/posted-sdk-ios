@@ -81,6 +81,10 @@ class DeviceUtils {
                         tag,
                         "[Posted:FINGERPRINT] pasteboard detectPatterns gate timed out; skipping clipboard read"
                     )
+                    // Structured signal (POS-246), distinct from the hit/miss outcome above, so
+                    // real-device gate-timeout frequency is queryable. No clipboard contents/PII —
+                    // just the timeout occurrence itself.
+                    PostedLogger.signal(tag, "pasteboard_detect_patterns_gate_timeout")
                     continuation.resume(returning: false)
                 }
             }

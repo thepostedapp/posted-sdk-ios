@@ -11,11 +11,14 @@ enum PostedLogger {
         case debug
         case warn
         case error
+        case signal
     }
 
 #if DEBUG
     // Test-only hook — nil in production. Set in tests to spy on warn calls.
     static var _warnSink: ((String, String) -> Void)?
+    // Test-only hook — nil in production. Set in tests to spy on signal() calls.
+    static var _signalSink: ((String, String) -> Void)?
 #endif
 
     static func debug(_ tag: String, _ message: String) {
@@ -27,6 +30,17 @@ enum PostedLogger {
         _warnSink?(tag, message)
 #endif
         log(tag: tag, level: .warn, message: message)
+    }
+
+    /// Emits a structured, queryable signal for a discrete occurrence (POS-246) — distinct from
+    /// the prose `debug`/`warn`/`error` levels so it can be counted/filtered independently (e.g.
+    /// how often a bounded gate times out in the field). `name` must be a static, privacy-safe
+    /// identifier: no clipboard contents, no PII, no other user data.
+    static func signal(_ tag: String, _ name: String) {
+#if DEBUG
+        _signalSink?(tag, name)
+#endif
+        log(tag: tag, level: .signal, message: "[Posted:SIGNAL] \(name)")
     }
 
     static func error(_ tag: String, _ message: String, error: Error? = nil) {
@@ -50,6 +64,8 @@ enum PostedLogger {
                 logger.log(level: .default, "\(message, privacy: .public)")
             case .error:
                 logger.log(level: .error, "\(message, privacy: .public)")
+            case .signal:
+                logger.log(level: .info, "\(message, privacy: .public)")
             }
             return
         }
@@ -63,6 +79,8 @@ enum PostedLogger {
             logType = .default
         case .error:
             logType = .error
+        case .signal:
+            logType = .info
         }
 
         os_log("%{public}@", log: osLog, type: logType, message)
