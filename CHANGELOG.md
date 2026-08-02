@@ -46,6 +46,14 @@ All notable changes to PostedSDK iOS are documented here.
 - `processLink(_:)`, `processLink(_:config:)` (all overloads) — for cold-start attribution use
   `resolveAppLaunch`; for runtime deep links handle the URL directly from your delegate callback.
 
+### Removed
+
+- Nothing is hard-removed from the public surface in this release. `resolveInitialLink` and
+  `processLink` remain available as deprecated shims for one cycle and are removed in **4.0**.
+  This platform never publicly exposed `getDeferredLink` or `resolveShortLink` (short-link
+  resolution is an internal implementation detail), so there is no dropped surface to document
+  for those.
+
 ### Migration guide
 
 See [Migrating from 2.x](./README.md#migrating-from-2x) in the README.
