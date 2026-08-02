@@ -34,9 +34,7 @@ public class Posted {
     // clobbered, and a de-duped caller must not trigger a duplicate network call.
     private var resolutionGeneration = 0
 
-    private init() {
-        StorageUtils.migrateKeysIfNeeded()
-    }
+    private init() {}
 
     // Once-per-session de-dup for deprecated-shim warnings (POS-516, parity port of RN's
     // POS-177 warnOnce): without this, a shim on a hot path re-emits its deprecation notice on
