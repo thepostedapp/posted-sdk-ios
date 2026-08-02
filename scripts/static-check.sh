@@ -22,4 +22,13 @@ for sym in "${doc_api_symbols[@]}"; do
   fi
 done
 [ "$drift" -eq 0 ] && echo "  ✓ doc symbols present in Sources/"
+# Guard: reject stale references to the old GitHub org (postedapp); correct org is thepostedapp.
+# The search pattern does not appear in thepostedapp URLs so there are no false positives.
+echo "▶ org-url guard: no stale old-org references (BLOCKING)"
+STALE_PATTERN='github\.com/postedapp'
+if MATCHES=$(git grep -n -- "$STALE_PATTERN" -- ':!scripts/static-check.sh'); then
+  echo "✗ stale old-org URL found — update to github.com/thepostedapp:"
+  echo "$MATCHES"
+  exit 1
+fi
 echo "✓ static gate passed (correctness verified in CI)"
