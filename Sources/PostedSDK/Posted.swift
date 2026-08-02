@@ -34,9 +34,7 @@ public class Posted {
     // clobbered, and a de-duped caller must not trigger a duplicate network call.
     private var resolutionGeneration = 0
 
-    private init() {
-        StorageUtils.migrateKeysIfNeeded()
-    }
+    private init() {}
 
     // Internal-only bookkeeping accessors (POS-267). `@testable import` exposes `internal` members
     // to the test target, letting tests assert the epoch guard directly right after resetSession()
