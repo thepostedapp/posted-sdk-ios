@@ -1,17 +1,8 @@
-<img src="https://github.com/user-attachments/assets/c965b51b-7307-477a-8d22-9c9cd6da6231" alt="PostedSDK iOS SDK by Software Mansion" width="100%"/>
-
-[![Ad](https://revive-adserver.swmansion.com/www/images/zone-gh-ios-detour-1?n=1)](https://revive-adserver.swmansion.com/www/delivery/ck.php?zoneid=zone-gh-ios-detour-1&n=1)
-[![Ad](https://revive-adserver.swmansion.com/www/images/zone-gh-ios-detour-2?n=1)](https://revive-adserver.swmansion.com/www/delivery/ck.php?zoneid=zone-gh-ios-detour-2&n=1)
-[![Ad](https://revive-adserver.swmansion.com/www/images/zone-gh-ios-detour-3?n=1)](https://revive-adserver.swmansion.com/www/delivery/ck.php?zoneid=zone-gh-ios-detour-3&n=1)
+<img src="https://github.com/user-attachments/assets/c965b51b-7307-477a-8d22-9c9cd6da6231" alt="PostedSDK iOS SDK" width="100%"/>
 
 # PostedSDK iOS
 
 PostedSDK is an iOS SDK for handling deferred deep links. A deferred link works like a regular deep link, but survives the App Store install — a user who clicks a link before having the app installed is redirected to the right screen on first launch. PostedSDK also handles Universal Links and custom scheme links in a single unified API.
-
-## Quick links
-
-- Documentation: [https://postedapp.com/docs/](https://postedapp.com/docs/) <!-- TODO(B6): update when new docs URL is live -->
-- Installation guide: [https://postedapp.com/docs/sdk/ios/sdk-installation](https://postedapp.com/docs/sdk/ios/sdk-installation) <!-- TODO(B6): update when new docs URL is live -->
 
 ## Create an account
 
@@ -231,7 +222,7 @@ Posted.shared.mountAnalytics(config: config)
 Posted.shared.unmountAnalytics()
 ```
 
-See the [analytics docs](https://postedapp.com/docs/) <!-- TODO(B6): update when new docs URL is live --> for the full event list and retention tracking setup.
+See the analytics documentation for the full event list and retention tracking setup.
 
 ## Types
 
@@ -327,16 +318,6 @@ public enum LinkProcessingMode: String {
 
 A ready-to-run example covering deferred links, Universal Links, and custom scheme links is included at [`ExampleUsage/PostedExampleAppProject`](./ExampleUsage/PostedExampleAppProject). See the [example setup guide](./ExampleUsage/README.md) for instructions.
 
-## Other platform SDKs
-
-PostedSDK is also available for other app stacks:
-
-<!-- TODO(B7): GitHub org/repo names finalize when the board-gated rename lands. -->
-
-- Android SDK: [https://github.com/thepostedapp/posted-sdk-android](https://github.com/thepostedapp/posted-sdk-android)
-- Flutter SDK: [https://github.com/thepostedapp/posted-sdk-flutter](https://github.com/thepostedapp/posted-sdk-flutter)
-- React Native SDK: [https://github.com/thepostedapp/posted-sdk-react-native](https://github.com/thepostedapp/posted-sdk-react-native)
-
 ---
 
 ## Migrating from 2.x
@@ -384,9 +365,3 @@ major release). Update before upgrading past 3.x to avoid breaking changes.
 ## License
 
 This library is licensed under [The MIT License](./LICENSE).
-
-## PostedSDK iOS is created by Software Mansion
-
-Since 2012, [Software Mansion](https://swmansion.com) is a software agency with experience in building web and mobile apps. We are Core React Native Contributors and experts in dealing with all kinds of React Native issues. We can help you build your next dream product – [Hire us](https://swmansion.com/contact/projects?utm_source=detour&utm_medium=readme).
-
-[![swm](https://logo.swmansion.com/logo?color=white&variant=desktop&width=150&tag=ios-detour-github "Software Mansion")](https://swmansion.com)
