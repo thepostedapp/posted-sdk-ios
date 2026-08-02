@@ -2,6 +2,8 @@ import Foundation
 
 class StorageUtils {
 
+    private static let tag = "StorageUtils"
+
     enum Constants {
         static let firstEntranceKey = "PostedFirstEntranceFlag"
         static let deviceIDKey = "Posted_deviceId"
@@ -48,10 +50,24 @@ class StorageUtils {
         return envelope.result
     }
 
+#if DEBUG
+    // Test-only hook — false in production. PostedResult/PostedLink have no Double/Float fields,
+    // so there is no way to produce a genuinely un-encodable envelope through the public API;
+    // this hook forces markAttributionResolved(result:) down its encode-failure branch so that
+    // branch (and the STORAGE_WRITE_FAILED log it emits) can be covered by a test.
+    static var _forceEncodeFailureForTesting = false
+    private static var isEncodeFailureForced: Bool { _forceEncodeFailureForTesting }
+#else
+    private static var isEncodeFailureForced: Bool { false }
+#endif
+
     // Stores result then sets the resolved flag — flag is never set without a decodable cached blob.
     static func markAttributionResolved(result: PostedResult) {
         let envelope = CachedAttribution(schemaVersion: CachedAttribution.currentVersion, result: result)
-        guard let data = try? JSONEncoder().encode(envelope) else { return }
+        guard !isEncodeFailureForced, let data = try? JSONEncoder().encode(envelope) else {
+            PostedLogger.debug(tag, "[Posted:STORAGE_WRITE_FAILED] Failed to encode fire-once result; flag not armed, next launch will re-resolve.")
+            return
+        }
         UserDefaults.standard.set(data, forKey: Constants.cachedAttributionResultKey)
         UserDefaults.standard.set(true, forKey: Constants.attributionResolvedKey)
     }
