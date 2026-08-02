@@ -193,7 +193,7 @@ public class Posted {
     // Converts a URL into a PostedResult with a parsed route.
     @available(*, deprecated, renamed: "resolveAppLaunch")
     public func processLink(_ url: URL) -> PostedResult {
-        Self.warnOnce("processLink", tag: tag, message: "[Deprecated] processLink(_:) — migrate to resolveAppLaunch(config:launchContext:)")
+        Self.warnOnce("processLink", tag: tag, message: "[Posted] processLink() is deprecated and will be removed in 4.0.0. Use resolveAppLaunch() instead.")
         if LinkUtils.isInfrastructureUrl(url.absoluteString) {
             PostedLogger.debug(tag, "Ignored infrastructure URL: \(url.absoluteString)")
             return .empty()
@@ -215,7 +215,7 @@ public class Posted {
     // Processes URL and optionally resolves web short-links when config is provided.
     @available(*, deprecated, renamed: "resolveAppLaunch")
     public func processLink(_ url: URL, config: PostedConfig?) async -> PostedResult {
-        Self.warnOnce("processLink(_:config:)", tag: tag, message: "[Deprecated] processLink(_:config:) — migrate to resolveAppLaunch(config:launchContext:)")
+        Self.warnOnce("processLink(_:config:)", tag: tag, message: "[Posted] processLink() is deprecated and will be removed in 4.0.0. Use resolveAppLaunch() instead.")
         if LinkUtils.detectLinkType(from: url) == .verified, let config {
             let clickResult = await PostedNetwork.sendUniversalLinkClick(config: config, url: url.absoluteString)
             if !clickResult.allowed {
@@ -229,7 +229,7 @@ public class Posted {
     // If config is provided, web short-links are resolved before parsing.
     @available(*, deprecated, renamed: "resolveAppLaunch")
     public func processLink(_ rawLink: String, config: PostedConfig? = nil) async -> PostedResult {
-        Self.warnOnce("processLink(_:config:)", tag: tag, message: "[Deprecated] processLink(_:config:) — migrate to resolveAppLaunch(config:launchContext:)")
+        Self.warnOnce("processLink(_:config:)", tag: tag, message: "[Posted] processLink() is deprecated and will be removed in 4.0.0. Use resolveAppLaunch() instead.")
         let resolvedLink = await resolveLink(rawLink, config: config)
         if resolvedLink == nil {
             PostedLogger.debug(tag, "No matching link found")
@@ -257,7 +257,7 @@ public class Posted {
         launchOptions: [UIApplication.LaunchOptionsKey: Any]?,
         completion: @escaping @Sendable (PostedResult) -> Void
     ) {
-        Self.warnOnce("resolveInitialLink", tag: tag, message: "[Deprecated] resolveInitialLink — migrate to resolveAppLaunch(config:launchContext:)")
+        Self.warnOnce("resolveInitialLink", tag: tag, message: "[Posted] resolveInitialLink() is deprecated and will be removed in 4.0.0. Use resolveAppLaunch() instead.")
         _resolveInitialLink(config: config, launchContext: .launchOptions(launchOptions), completion: completion)
     }
 
@@ -267,7 +267,7 @@ public class Posted {
         connectionOptions: UIScene.ConnectionOptions,
         completion: @escaping @Sendable (PostedResult) -> Void
     ) {
-        Self.warnOnce("resolveInitialLink", tag: tag, message: "[Deprecated] resolveInitialLink — migrate to resolveAppLaunch(config:launchContext:)")
+        Self.warnOnce("resolveInitialLink", tag: tag, message: "[Posted] resolveInitialLink() is deprecated and will be removed in 4.0.0. Use resolveAppLaunch() instead.")
         _resolveInitialLink(config: config, launchContext: .connectionOptions(connectionOptions), completion: completion)
     }
 

@@ -118,7 +118,7 @@ final class DeprecatedShimsTests: XCTestCase {
             Posted.shared.resolveInitialLink(config: config, launchOptions: nil) { cont.resume(returning: $0) }
         }
 
-        let deprecationWarns = capturedWarnings.filter { $0.contains("[Deprecated] resolveInitialLink") }
+        let deprecationWarns = capturedWarnings.filter { $0.contains("[Posted] resolveInitialLink() is deprecated and will be removed in 4.0.0. Use resolveAppLaunch() instead.") }
         XCTAssertEqual(deprecationWarns.count, 1,
             "resolveInitialLink(launchOptions:) must emit exactly one deprecation warning per call")
     }
@@ -135,7 +135,7 @@ final class DeprecatedShimsTests: XCTestCase {
         _ = Posted.shared.processLink(url)
         _ = Posted.shared.processLink(url)
 
-        let deprecationWarns = captured.filter { $0.contains("[Deprecated] processLink(_:)") }
+        let deprecationWarns = captured.filter { $0.contains("[Posted] processLink() is deprecated and will be removed in 4.0.0. Use resolveAppLaunch() instead.") }
         XCTAssertEqual(deprecationWarns.count, 1, "processLink(_:) must warn at most once per session")
     }
 
@@ -148,7 +148,7 @@ final class DeprecatedShimsTests: XCTestCase {
         _ = await Posted.shared.processLink(url, config: nil)
         _ = await Posted.shared.processLink(url.absoluteString, config: nil)
 
-        let deprecationWarns = captured.filter { $0.contains("[Deprecated] processLink(_:config:)") }
+        let deprecationWarns = captured.filter { $0.contains("[Posted] processLink() is deprecated and will be removed in 4.0.0. Use resolveAppLaunch() instead.") }
         XCTAssertEqual(deprecationWarns.count, 1,
             "processLink(_:config:) URL and String overloads share identical message text and must share one warn-once key")
     }
@@ -162,10 +162,12 @@ final class DeprecatedShimsTests: XCTestCase {
         _ = Posted.shared.processLink(url)
         _ = await Posted.shared.processLink(url, config: nil)
 
-        XCTAssertEqual(captured.filter { $0.contains("[Deprecated] processLink(_:)") }.count, 1,
-            "processLink(_:)'s warn-once guard must fire")
-        XCTAssertEqual(captured.filter { $0.contains("[Deprecated] processLink(_:config:)") }.count, 1,
-            "warning a different shim must not be silenced by an unrelated shim's warn-once guard")
+        // processLink(_:) and processLink(_:config:) share identical canonical wording (both
+        // reduce to the bare "processLink()" name), but are keyed independently in warnOnce, so
+        // both must still fire rather than one silencing the other.
+        let deprecationWarns = captured.filter { $0.contains("[Posted] processLink() is deprecated and will be removed in 4.0.0. Use resolveAppLaunch() instead.") }
+        XCTAssertEqual(deprecationWarns.count, 2,
+            "processLink(_:) and processLink(_:config:) have independent warn-once keys and must each fire once")
     }
 
     func testDeprecationWarningRearmsAfterReset() {
@@ -178,7 +180,7 @@ final class DeprecatedShimsTests: XCTestCase {
         Posted._resetDeprecationWarnings()
         _ = Posted.shared.processLink(url)
 
-        let deprecationWarns = captured.filter { $0.contains("[Deprecated] processLink(_:)") }
+        let deprecationWarns = captured.filter { $0.contains("[Posted] processLink() is deprecated and will be removed in 4.0.0. Use resolveAppLaunch() instead.") }
         XCTAssertEqual(deprecationWarns.count, 2, "_resetDeprecationWarnings() must re-arm the warn-once guard")
     }
 }
