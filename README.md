@@ -326,6 +326,10 @@ PostedSDK is also available for other app stacks:
 
 ## Migrating from 2.x
 
+PostedSDK 3.0.0 is **attribution-first**: instead of juggling several link-handling calls, your
+app calls one method — `resolveAppLaunch` — once per cold start and gets back the attribution
+result for that install. This section covers what changed and how to adopt it.
+
 ### `resolveInitialLink` → `resolveAppLaunch`
 
 `resolveInitialLink` is deprecated in 3.0.0 and will be removed in the next major release (4.0).
@@ -336,7 +340,17 @@ Replace it with `resolveAppLaunch(config:launchContext:)`:
 | `resolveInitialLink(config:launchOptions:completion:)` | `resolveAppLaunch(config:launchContext: .launchOptions(launchOptions))` |
 | `resolveInitialLink(config:connectionOptions:completion:)` | `resolveAppLaunch(config:launchContext: .connectionOptions(connectionOptions))` |
 
-The new method is `async`/`await` — wrap the call in a `Task {}` from your delegate method.
+The new method is `async`/`await` — wrap the call in a `Task {}` from your delegate method. Both
+`resolveInitialLink` overloads' separate parameters are unified behind a single `LaunchContext`
+enum (`.launchOptions(...)` / `.connectionOptions(...)`) — pass the value from your app or scene
+delegate, as shown in [Resolve app launch](#2-resolve-app-launch-300).
+
+### Fire-once semantics
+
+`resolveAppLaunch` resolves attribution **once per install**: the first call resolves and caches
+the result, and every subsequent call within the same install — including across app updates —
+returns the cached value instead of re-resolving. The cache re-arms automatically on reinstall.
+Call `resetSession()` to re-arm manually; this is for testing only — do not call it in production.
 
 ### `processLink` → handle URLs directly
 
@@ -346,8 +360,9 @@ delegate callback and navigate — no SDK call is required.
 
 ### Removal timeline
 
-Deprecated methods (`resolveInitialLink`, `processLink`) will be removed in 4.0 (next major
-release). Update before upgrading past 3.x to avoid breaking changes.
+Nothing is hard-removed from the public surface in 3.0.0. `resolveInitialLink` and `processLink`
+remain available as deprecated shims for this release cycle and will be removed in **4.0** (next
+major release). Update before upgrading past 3.x to avoid breaking changes.
 
 ---
 
