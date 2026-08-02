@@ -19,9 +19,14 @@ enum PostedLogger {
     static var _warnSink: ((String, String) -> Void)?
     // Test-only hook — nil in production. Set in tests to spy on signal() calls.
     static var _signalSink: ((String, String) -> Void)?
+    // Test-only hook — nil in production. Set in tests to spy on debug() calls.
+    static var _debugSink: ((String, String) -> Void)?
 #endif
 
     static func debug(_ tag: String, _ message: String) {
+#if DEBUG
+        _debugSink?(tag, message)
+#endif
         log(tag: tag, level: .debug, message: message)
     }
 
