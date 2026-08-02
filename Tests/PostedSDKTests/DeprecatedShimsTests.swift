@@ -15,6 +15,7 @@ final class DeprecatedShimsTests: XCTestCase {
         StubURLProtocol.reset()
         session = StubURLProtocol.makeSession()
         Posted.shared.resetSession(allowDeferredRetry: true)
+        Posted._resetDeprecationWarnings()
     }
 
     // MARK: - processLink (sync, no network)
@@ -120,5 +121,64 @@ final class DeprecatedShimsTests: XCTestCase {
         let deprecationWarns = capturedWarnings.filter { $0.contains("[Deprecated] resolveInitialLink") }
         XCTAssertEqual(deprecationWarns.count, 1,
             "resolveInitialLink(launchOptions:) must emit exactly one deprecation warning per call")
+    }
+
+    // MARK: - Deprecation warn-once de-dup (POS-516)
+
+    func testProcessLinkSyncWarnsOnce() {
+        var captured: [String] = []
+        PostedLogger._warnSink = { _, message in captured.append(message) }
+        defer { PostedLogger._warnSink = nil }
+
+        let url = URL(string: "https://example.com/product/42")!
+        _ = Posted.shared.processLink(url)
+        _ = Posted.shared.processLink(url)
+        _ = Posted.shared.processLink(url)
+
+        let deprecationWarns = captured.filter { $0.contains("[Deprecated] processLink(_:)") }
+        XCTAssertEqual(deprecationWarns.count, 1, "processLink(_:) must warn at most once per session")
+    }
+
+    func testProcessLinkConfigOverloadsShareDeprecationKey() async {
+        var captured: [String] = []
+        PostedLogger._warnSink = { _, message in captured.append(message) }
+        defer { PostedLogger._warnSink = nil }
+
+        let url = URL(string: "https://example.com/product/42")!
+        _ = await Posted.shared.processLink(url, config: nil)
+        _ = await Posted.shared.processLink(url.absoluteString, config: nil)
+
+        let deprecationWarns = captured.filter { $0.contains("[Deprecated] processLink(_:config:)") }
+        XCTAssertEqual(deprecationWarns.count, 1,
+            "processLink(_:config:) URL and String overloads share identical message text and must share one warn-once key")
+    }
+
+    func testDeprecationWarningsArePerMethodIndependent() async {
+        var captured: [String] = []
+        PostedLogger._warnSink = { _, message in captured.append(message) }
+        defer { PostedLogger._warnSink = nil }
+
+        let url = URL(string: "https://example.com/product/42")!
+        _ = Posted.shared.processLink(url)
+        _ = await Posted.shared.processLink(url, config: nil)
+
+        XCTAssertEqual(captured.filter { $0.contains("[Deprecated] processLink(_:)") }.count, 1,
+            "processLink(_:)'s warn-once guard must fire")
+        XCTAssertEqual(captured.filter { $0.contains("[Deprecated] processLink(_:config:)") }.count, 1,
+            "warning a different shim must not be silenced by an unrelated shim's warn-once guard")
+    }
+
+    func testDeprecationWarningRearmsAfterReset() {
+        var captured: [String] = []
+        PostedLogger._warnSink = { _, message in captured.append(message) }
+        defer { PostedLogger._warnSink = nil }
+
+        let url = URL(string: "https://example.com/product/42")!
+        _ = Posted.shared.processLink(url)
+        Posted._resetDeprecationWarnings()
+        _ = Posted.shared.processLink(url)
+
+        let deprecationWarns = captured.filter { $0.contains("[Deprecated] processLink(_:)") }
+        XCTAssertEqual(deprecationWarns.count, 2, "_resetDeprecationWarnings() must re-arm the warn-once guard")
     }
 }
