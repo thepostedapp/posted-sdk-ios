@@ -32,11 +32,41 @@ final class ContractConformanceTests: XCTestCase {
             req.value(forHTTPHeaderField: "X-App-ID"), "com.test.app",
             "X-App-ID header missing or wrong", file: file, line: line
         )
-        // X-SDK must be ios/<version> — no Flutter marker present in test bundle.
+        // X-SDK must be ios/<semver> — no Flutter marker present in test bundle.
         let sdk = req.value(forHTTPHeaderField: "X-SDK") ?? ""
         XCTAssertTrue(
-            sdk.hasPrefix("ios/"),
-            "X-SDK must start with 'ios/' — got '\(sdk)'", file: file, line: line
+            sdk.range(of: #"^ios/\d+\.\d+\.\d+$"#, options: .regularExpression) != nil,
+            "X-SDK must match ^ios/\\d+\\.\\d+\\.\\d+$ — got '\(sdk)'", file: file, line: line
+        )
+    }
+
+    // MARK: - POS-87 canonical X-SDK contract (identical wording across ios/android/flutter)
+    //
+    // CONTRACT:
+    // - Format: the X-SDK header value MUST match `^<platform>/<semver>$`, where
+    //   <semver> = \d+\.\d+\.\d+ (e.g. "ios/3.0.0").
+    // - Platform token (exact): native iOS -> "ios"; native Android -> "android";
+    //   Flutter wrapper (both iOS-host and Android-host markers) -> "flutter".
+    // - Backend dependency: the native dual-lookup (PostedFlutterMarker -> legacy
+    //   DetourFlutterMarker) reads this value verbatim; a token/format drift on any
+    //   platform silently mis-attributes installs. That is why this is pinned in CI.
+
+    func testXSDKHeaderPinsPlatformTokenAndSemverFormat() {
+        XCTAssertEqual(
+            PostedConstants.sdkType, "ios",
+            "POS-87 contract: native iOS platform token must be exactly 'ios'"
+        )
+
+        // Fallback path only — no Flutter marker class is present in the test bundle.
+        let fallback = PostedConstants.sdkHeaderValue
+        XCTAssertTrue(
+            fallback.range(of: #"^ios/\d+\.\d+\.\d+$"#, options: .regularExpression) != nil,
+            "POS-87 contract: native fallback X-SDK '\(fallback)' must match ^ios/\\d+\\.\\d+\\.\\d+$"
+        )
+
+        XCTAssertEqual(
+            fallback, "ios/\(PostedConstants.sdkVersion)",
+            "POS-87 contract: X-SDK token+version must be wired to PostedConstants.sdkVersion"
         )
     }
 
@@ -514,8 +544,8 @@ final class ResolveAppLaunchMatchLinkConformanceTests: XCTestCase {
         )
         let sdk = req.value(forHTTPHeaderField: "X-SDK") ?? ""
         XCTAssertTrue(
-            sdk.hasPrefix("ios/"),
-            "X-SDK must start with 'ios/' — got '\(sdk)'", file: file, line: line
+            sdk.range(of: #"^ios/\d+\.\d+\.\d+$"#, options: .regularExpression) != nil,
+            "X-SDK must match ^ios/\\d+\\.\\d+\\.\\d+$ — got '\(sdk)'", file: file, line: line
         )
     }
 
