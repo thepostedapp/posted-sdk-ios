@@ -9,7 +9,7 @@ Sign up here: [https://postedapp.com](https://postedapp.com) <!-- TODO(B3): upda
 
 ## Installation
 
-Latest stable release: `3.0.0`
+Latest stable release: `4.0.0`
 
 ### Requirements
 
@@ -23,7 +23,7 @@ In Xcode, go to `File > Add Package Dependencies...`, enter the repository URL, 
 Or in `Package.swift`:
 
 ```swift
-.package(url: "https://github.com/thepostedapp/posted-sdk-ios", from: "3.0.0")
+.package(url: "https://github.com/thepostedapp/posted-sdk-ios", from: "4.0.0")
 ```
 
 ### CocoaPods
@@ -35,7 +35,7 @@ platform :ios, '13.0'
 
 target 'YourAppTarget' do
   use_frameworks!
-  pod 'PostedSDK', '3.0.0'
+  pod 'PostedSDK', '4.0.0'
 end
 ```
 
@@ -49,8 +49,8 @@ Then run `pod install`.
 import PostedSDK
 
 let config = PostedConfig(
-    apiKey: "<YOUR_POSTED_API_KEY>",
-    appID: "<YOUR_POSTED_APP_ID>"
+    apiKey: "<YOUR_API_KEY>",
+    appID: "<YOUR_APP_ID>"
 )
 ```
 
@@ -188,8 +188,8 @@ Use `linkProcessingMode` to control which link sources the SDK handles:
 
 ```swift
 let config = PostedConfig(
-    apiKey: "<YOUR_POSTED_API_KEY>",
-    appID: "<YOUR_POSTED_APP_ID>",
+    apiKey: "<YOUR_API_KEY>",
+    appID: "<YOUR_APP_ID>",
     linkProcessingMode: .webOnly
 )
 ```
