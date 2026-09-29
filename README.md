@@ -358,6 +358,3 @@ Apps still calling the removed methods must migrate before upgrading past 3.x.
 
 ---
 
-## License
-
-This library is licensed under [The MIT License](./LICENSE).
