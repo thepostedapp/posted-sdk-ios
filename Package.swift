@@ -21,7 +21,10 @@ let package = Package(
         .testTarget(
             name: "PostedSDKTests",
             dependencies: ["PostedSDK"],
-            path: "Tests/PostedSDKTests"
+            path: "Tests/PostedSDKTests",
+            resources: [
+                .copy("Fixtures/posted-backend-contract.yaml"),
+            ]
         ),
     ]
 )
