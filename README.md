@@ -25,7 +25,6 @@ In Xcode, go to `File > Add Package Dependencies...`, enter the repository URL, 
 Or in `Package.swift`:
 
 ```swift
-// TODO(B7): repo URL finalizes when the GitHub org/repo rename (board-gated) lands.
 .package(url: "https://github.com/thepostedapp/posted-sdk-ios", from: "3.0.0")
 ```
 

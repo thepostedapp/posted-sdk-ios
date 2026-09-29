@@ -9,8 +9,6 @@ Pod::Spec.new do |s|
     handling, and analytics.
   DESC
 
-  # TODO(B7): GitHub org/repo rename (*-detour -> posted-sdk-*) is board-gated (G1);
-  # metadata is staged against the target repo name now, finalize on rename.
   s.homepage         = 'https://github.com/thepostedapp/posted-sdk-ios'
   s.license          = { :type => 'MIT', :file => 'LICENSE' }
   s.author           = { 'Software Mansion' => 'yuriy@postedapp.com' }

@@ -15,6 +15,5 @@ link was removed from the referencing doc (see the "Removed?" column for excepti
 
 **Note on README.md:34:** this URL is the `.package(url:...)` coordinate inside the SPM code
 sample, not a rendered hyperlink — deleting it would leave invalid Swift syntax with no working
-replacement, since no live repo URL exists yet. It's already tracked inline via
-`TODO(B7): repo URL finalizes when the GitHub org/repo rename (board-gated) lands.` Left in place
-pending that rename; flagged to CTO for awareness rather than removed unilaterally.
+replacement. The GitHub org/repo rename (board-gated, G1) landed 2026-09-29; the URL is final
+(`https://github.com/thepostedapp/posted-sdk-ios`), not deferred.
