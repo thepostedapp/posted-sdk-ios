@@ -1,6 +1,6 @@
 // CONTRACT: The Flutter plugin ships a marker class at "PostedFlutterMarker" with a static
 // property exposed to ObjC as "sdkHeaderValue". If not found, reports as native iOS.
-// Counterpart: detour-flutter-plugin/ios/Classes/PostedFlutterMarker.swift
+// Counterpart: posted-sdk-flutter/ios/Classes/PostedFlutterMarker.swift
 
 import Foundation
 
@@ -23,12 +23,11 @@ enum PostedConstants {
         // Fallback for pure native iOS SDK consumers.
         return "\(sdkType)/\(sdkVersion)"
     }()
-    // TODO(B3): Backend API domain (godetour.dev) is intentionally kept until the
-    // api.posted.app cutover is confirmed. The cutover is gated on D1 DNS (board-gated)
-    // and must land in lockstep across all platform SDKs; do not change unilaterally.
-    static let apiUrl: URL? = URL(string: "https://godetour.dev/api/link/match-link")
-    static let resolveShortUrl: URL? = URL(string: "https://godetour.dev/api/link/resolve-short")
-    static let analyticsEventUrl: URL? = URL(string: "https://godetour.dev/api/analytics/event")
-    static let analyticsRetentionUrl: URL? = URL(string: "https://godetour.dev/api/analytics/retention")
-    static let universalLinkClickUrl: URL? = URL(string: "https://godetour.dev/api/link/universal-link-click")
+    // Backend API domain. Cut over to attr.postedapp.com (POS-336, board-executed
+    // 2026-09-29) in lockstep across all platform SDKs.
+    static let apiUrl: URL? = URL(string: "https://attr.postedapp.com/api/link/match-link")
+    static let resolveShortUrl: URL? = URL(string: "https://attr.postedapp.com/api/link/resolve-short")
+    static let analyticsEventUrl: URL? = URL(string: "https://attr.postedapp.com/api/analytics/event")
+    static let analyticsRetentionUrl: URL? = URL(string: "https://attr.postedapp.com/api/analytics/retention")
+    static let universalLinkClickUrl: URL? = URL(string: "https://attr.postedapp.com/api/link/universal-link-click")
 }
