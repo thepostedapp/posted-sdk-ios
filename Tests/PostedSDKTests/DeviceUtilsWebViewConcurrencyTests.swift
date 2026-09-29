@@ -19,7 +19,12 @@ final class DeviceUtilsWebViewConcurrencyTests: XCTestCase {
     // Generous relative to a real WKWebView JS evaluation, but a hard ceiling: if the shared-static
     // race ever regressed, one of the two calls would hang forever instead of completing, and this
     // bounds the failure instead of wedging the whole test run.
-    private static let hardCeiling: TimeInterval = 30
+    //
+    // Raised 30 -> 120 (POS-146). This is a hang detector, not a performance budget: a regressed
+    // race hangs forever, so any finite completion passes the thing we actually care about. On a
+    // loaded CI runner two cold WKWebView JS evaluations were measured at 40.9s and 69.5s, which
+    // tripped the old ceiling without any race being present. 120s still bounds a wedged run.
+    private static let hardCeiling: TimeInterval = 120
 
     @MainActor
     func testTwoConcurrentGetRealUserAgentCallsBothComplete() async {
