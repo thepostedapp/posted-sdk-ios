@@ -2,6 +2,8 @@
 
 PostedSDK is an iOS SDK for handling deferred deep links. A deferred link works like a regular deep link, but survives the App Store install — a user who clicks a link before having the app installed is redirected to the right screen on first launch. PostedSDK also handles Universal Links and custom scheme links in a single unified API.
 
+> **New to Posted?** Start with the **[cross-platform quickstart](https://github.com/thepostedapp/posted-sdk-admin/blob/main/GETTING-STARTED.md)** — create an app, copy your credentials, install the SDK, initialize it, and verify, all in one place. This README is the full iOS reference.
+
 ## Create an account
 
 You need a Posted account to generate app credentials and configure your links.  
