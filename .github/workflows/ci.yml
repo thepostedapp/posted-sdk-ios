@@ -1,0 +1,29 @@
+name: ci
+on:
+  pull_request: {}
+  push: { branches: [main] }
+jobs:
+  static:                       # mirrors scripts/static-check.sh (lint-only)
+    runs-on: macos-14           # newer Xcode/Swift than the dev host
+    steps:
+      - uses: actions/checkout@v4
+      - run: brew install swiftlint swiftformat
+      - run: bash scripts/static-check.sh
+  build:                        # the iOS correctness authority (Swift 5.9+ compiles this code)
+    needs: static
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: build SPM library for iOS
+        run: xcodebuild -scheme PostedSDK -destination 'generic/platform=iOS' build
+      - name: validate podspec
+        run: |
+          sudo gem install cocoapods --no-document
+          pod lib lint PostedSDK.podspec --allow-warnings
+  test:                         # SDK→contract conformance suite (PostedSDKTests target)
+    needs: static
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: run conformance tests
+        run: xcodebuild -scheme PostedSDK -destination 'platform=iOS Simulator,name=iPhone 15' test
