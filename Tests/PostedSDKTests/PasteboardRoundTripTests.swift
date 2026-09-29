@@ -21,13 +21,13 @@ final class PasteboardRoundTripTests: XCTestCase {
     /// Strings that mirror what C can write: canonical short link, query params, trailing slash,
     /// preserved casing, percent-encoding, unicode, empty. Read format must be byte-identical to each.
     private static let writeFormatSamples: [String] = [
-        "https://godetour.dev/x9Az",
-        "https://godetour.dev/x9Az?utm_source=ig&variant=b",
-        "https://godetour.dev/x9Az/",
-        "https://GODETOUR.dev/X9aZ",                        // casing must survive (no lowercasing)
-        "https://godetour.dev/promo?q=a%20b&e=%C3%A9",     // percent-encoding must survive verbatim
-        "https://godetour.dev/naïve-café-🚀",              // non-ASCII must survive verbatim
-        "  https://godetour.dev/x9Az  ",                   // surrounding whitespace must NOT be trimmed
+        "https://l.postedapp.com/x9Az",
+        "https://l.postedapp.com/x9Az?utm_source=ig&variant=b",
+        "https://l.postedapp.com/x9Az/",
+        "https://L.postedapp.com/X9aZ",                        // casing must survive (no lowercasing)
+        "https://l.postedapp.com/promo?q=a%20b&e=%C3%A9",     // percent-encoding must survive verbatim
+        "https://l.postedapp.com/naïve-café-🚀",              // non-ASCII must survive verbatim
+        "  https://l.postedapp.com/x9Az  ",                   // surrounding whitespace must NOT be trimmed
         "",                                                // empty string is not nil
     ]
 

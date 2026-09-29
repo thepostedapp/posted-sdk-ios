@@ -1,6 +1,6 @@
 // Conformance suite for the 5 PostedSDK→backend endpoints.
 // Assertions are inline/hand-coded (iOS vendors no fixture copy) against the canonical contract
-// at posted-sdk-admin/contract/posted-backend-contract.yaml (pinned v1.1.0, sha256 e6ca8f…9bd3).
+// at posted-sdk-admin/contract/posted-backend-contract.yaml (pinned v1.1.0, sha256 9a6d4ce0…88bde).
 // Uses a URLProtocol stub injected via the `session` parameter added to each network method.
 import XCTest
 @testable import PostedSDK
@@ -9,11 +9,11 @@ final class ContractConformanceTests: XCTestCase {
     private let testConfig = PostedConfig(apiKey: "test-api-key", appID: "com.test.app")
     private var session: URLSession!
 
-    private static let matchLinkURL = "https://godetour.dev/api/link/match-link"
-    private static let resolveShortURL = "https://godetour.dev/api/link/resolve-short"
-    private static let universalClickURL = "https://godetour.dev/api/link/universal-link-click"
-    private static let analyticsEventURL = "https://godetour.dev/api/analytics/event"
-    private static let analyticsRetentionURL = "https://godetour.dev/api/analytics/retention"
+    private static let matchLinkURL = "https://attr.postedapp.com/api/link/match-link"
+    private static let resolveShortURL = "https://attr.postedapp.com/api/link/resolve-short"
+    private static let universalClickURL = "https://attr.postedapp.com/api/link/universal-link-click"
+    private static let analyticsEventURL = "https://attr.postedapp.com/api/analytics/event"
+    private static let analyticsRetentionURL = "https://attr.postedapp.com/api/analytics/retention"
 
     override func setUp() {
         super.setUp()
@@ -242,7 +242,7 @@ final class ContractConformanceTests: XCTestCase {
 
         _ = await PostedNetwork.resolveShortLink(
             config: testConfig,
-            url: "https://godetour.dev/x9Az",
+            url: "https://l.postedapp.com/x9Az",
             session: session
         )
 
@@ -268,7 +268,7 @@ final class ContractConformanceTests: XCTestCase {
 
         _ = await PostedNetwork.sendUniversalLinkClick(
             config: testConfig,
-            url: "https://godetour.dev/u/launch?campaign=spring&variant=b",
+            url: "https://l.postedapp.com/u/launch?campaign=spring&variant=b",
             linkId: "lnk_5567",
             session: session
         )
@@ -302,7 +302,7 @@ final class ContractConformanceTests: XCTestCase {
 
         _ = await PostedNetwork.sendUniversalLinkClick(
             config: testConfig,
-            url: "https://godetour.dev/u/launch",
+            url: "https://l.postedapp.com/u/launch",
             linkId: nil,
             session: session
         )
@@ -319,7 +319,7 @@ final class ContractConformanceTests: XCTestCase {
 
         _ = await PostedNetwork.sendUniversalLinkClick(
             config: testConfig,
-            url: "https://godetour.dev/u/launch",
+            url: "https://l.postedapp.com/u/launch",
             session: session
         )
 
@@ -335,7 +335,7 @@ final class ContractConformanceTests: XCTestCase {
 
         _ = await PostedNetwork.sendUniversalLinkClick(
             config: testConfig,
-            url: "https://godetour.dev/u/launch?x=1",
+            url: "https://l.postedapp.com/u/launch?x=1",
             session: session
         )
 
@@ -522,8 +522,8 @@ final class ResolveAppLaunchMatchLinkConformanceTests: XCTestCase {
     private let config = PostedConfig(apiKey: "test-api-key", appID: "com.test.app")
     private var session: URLSession!
 
-    private static let matchLinkURL = "https://godetour.dev/api/link/match-link"
-    private static let universalClickURL = "https://godetour.dev/api/link/universal-link-click"
+    private static let matchLinkURL = "https://attr.postedapp.com/api/link/match-link"
+    private static let universalClickURL = "https://attr.postedapp.com/api/link/universal-link-click"
 
     override func setUp() {
         super.setUp()
@@ -600,7 +600,7 @@ final class ResolveAppLaunchMatchLinkConformanceTests: XCTestCase {
 
     func testResolveAppLaunchLinkPresentBranchNeverEmitsMatchLink() async throws {
         StubURLProtocol.responseData = #"{"allowed":true}"#.data(using: .utf8)!
-        let launchURL = URL(string: "https://godetour.dev/u/summer?ref=banner")!
+        let launchURL = URL(string: "https://l.postedapp.com/u/summer?ref=banner")!
         let context = LaunchContext.launchOptions([.url: launchURL])
 
         _ = await Posted.shared._resolveAppLaunch(config: config, launchContext: context, session: session)
