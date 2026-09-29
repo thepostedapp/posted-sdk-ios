@@ -59,7 +59,7 @@ final class StorageUtilsTornClearTests: XCTestCase {
         let result = await Posted.shared._resolveAppLaunch(config: config, launchContext: nil, session: session)
 
         XCTAssertNotNil(
-            StubURLProtocol.capturedRequests["https://godetour.dev/api/link/match-link"],
+            StubURLProtocol.capturedRequests["https://attr.postedapp.com/api/link/match-link"],
             "A torn clear (flag gone, blob present) must be treated as unresolved and re-resolve over the network, " +
             "never short-circuit to the stale leftover blob"
         )

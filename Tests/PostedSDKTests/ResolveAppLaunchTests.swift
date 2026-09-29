@@ -7,8 +7,8 @@ final class ResolveAppLaunchTests: XCTestCase {
     private let config = PostedConfig(apiKey: "test-key", appID: "com.test.app")
     private var session: URLSession!
 
-    private static let matchLinkURL = "https://godetour.dev/api/link/match-link"
-    private static let universalClickURL = "https://godetour.dev/api/link/universal-link-click"
+    private static let matchLinkURL = "https://attr.postedapp.com/api/link/match-link"
+    private static let universalClickURL = "https://attr.postedapp.com/api/link/universal-link-click"
 
     override func setUp() {
         super.setUp()
@@ -49,7 +49,7 @@ final class ResolveAppLaunchTests: XCTestCase {
     func testLinkPresentBranchHitsUniversalLinkClick() async throws {
         // Universal-link-click returns allowed; match-link URL is not expected.
         StubURLProtocol.responseData = #"{"allowed":true}"#.data(using: .utf8)!
-        let launchURL = URL(string: "https://godetour.dev/u/summer?ref=banner")!
+        let launchURL = URL(string: "https://l.postedapp.com/u/summer?ref=banner")!
         let context = LaunchContext.launchOptions([.url: launchURL])
 
         _ = await Posted.shared._resolveAppLaunch(config: config, launchContext: context, session: session)
@@ -67,7 +67,7 @@ final class ResolveAppLaunchTests: XCTestCase {
     func testLinkPresentBranchBlockedByClick() async throws {
         // Click endpoint returns explicit deny.
         StubURLProtocol.responseData = #"{"allowed":false}"#.data(using: .utf8)!
-        let launchURL = URL(string: "https://godetour.dev/u/launch")!
+        let launchURL = URL(string: "https://l.postedapp.com/u/launch")!
         let context = LaunchContext.launchOptions([.url: launchURL])
 
         let result = await Posted.shared._resolveAppLaunch(config: config, launchContext: context, session: session)
