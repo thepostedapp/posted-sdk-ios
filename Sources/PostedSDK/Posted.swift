@@ -9,9 +9,10 @@ public enum LaunchContext: @unchecked Sendable {
     case connectionOptions(UIScene.ConnectionOptions)
 }
 
-// Abstracts the subset of UIScene.ConnectionOptions that resolveInitialLink's connectionOptions
-// overload maps into a launch URL. UIScene.ConnectionOptions has no public initializer, so this
-// seam is what lets that mapping be exercised with a fake conformance in unit tests (POS-173).
+// Abstracts the subset of UIScene.ConnectionOptions that resolveAppLaunch's
+// .connectionOptions(_:) branch maps into a launch URL. UIScene.ConnectionOptions has no public
+// initializer, so this seam is what lets that mapping be exercised with a fake conformance in
+// unit tests (POS-173).
 protocol ConnectionOptionsMapping {
     var mappedURLContextURL: URL? { get }
     var mappedUserActivities: [NSUserActivity] { get }
@@ -35,32 +36,6 @@ public class Posted {
     private var resolutionGeneration = 0
 
     private init() {}
-
-    // Once-per-session de-dup for deprecated-shim warnings (POS-516, parity port of RN's
-    // POS-177 warnOnce): without this, a shim on a hot path re-emits its deprecation notice on
-    // every call and spams the log. Keyed per method rather than per message so overloads that
-    // intentionally share identical message text (e.g. the two processLink(_:config:) overloads)
-    // naturally share one key, per the design contract.
-    private static let deprecationWarnLock = NSLock()
-    private static var warnedDeprecations = Set<String>()
-
-    private static func warnOnce(_ method: String, tag: String, message: String) {
-        deprecationWarnLock.lock()
-        let alreadyWarned = !warnedDeprecations.insert(method).inserted
-        deprecationWarnLock.unlock()
-        guard !alreadyWarned else { return }
-        PostedLogger.warn(tag, message)
-    }
-
-#if DEBUG
-    // QA/test re-arm hook only — deliberately not part of the public SDK surface. Do not wire
-    // this into resetSession(), which governs resolution state, not warning de-dup.
-    static func _resetDeprecationWarnings() {
-        deprecationWarnLock.lock()
-        warnedDeprecations.removeAll()
-        deprecationWarnLock.unlock()
-    }
-#endif
 
     // Internal-only bookkeeping accessors (POS-267). `@testable import` exposes `internal` members
     // to the test target, letting tests assert the epoch guard directly right after resetSession()
@@ -188,87 +163,6 @@ public class Posted {
 
     private func browsingWebActivities(from connectionOptions: ConnectionOptionsMapping) -> [NSUserActivity] {
         connectionOptions.mappedUserActivities.filter { $0.activityType == NSUserActivityTypeBrowsingWeb }
-    }
-
-    // Converts a URL into a PostedResult with a parsed route.
-    @available(*, deprecated, renamed: "resolveAppLaunch")
-    public func processLink(_ url: URL) -> PostedResult {
-        Self.warnOnce("processLink", tag: tag, message: "[Posted] processLink() is deprecated and will be removed in 4.0.0. Use resolveAppLaunch() instead.")
-        if LinkUtils.isInfrastructureUrl(url.absoluteString) {
-            PostedLogger.debug(tag, "Ignored infrastructure URL: \(url.absoluteString)")
-            return .empty()
-        }
-
-        let linkType = LinkUtils.detectLinkType(from: url)
-        switch linkType {
-        case .verified:
-            PostedLogger.debug(tag, "Processing Universal Link")
-        case .scheme:
-            PostedLogger.debug(tag, "Processing Scheme Link")
-        case .deferred:
-            PostedLogger.debug(tag, "Processing Deferred Link")
-        }
-        let link = LinkUtils.makePostedLink(from: url, type: linkType)
-        return PostedResult(processed: true, link: link)
-    }
-
-    // Processes URL and optionally resolves web short-links when config is provided.
-    @available(*, deprecated, renamed: "resolveAppLaunch")
-    public func processLink(_ url: URL, config: PostedConfig?) async -> PostedResult {
-        Self.warnOnce("processLink(_:config:)", tag: tag, message: "[Posted] processLink() is deprecated and will be removed in 4.0.0. Use resolveAppLaunch() instead.")
-        if LinkUtils.detectLinkType(from: url) == .verified, let config {
-            let clickResult = await PostedNetwork.sendUniversalLinkClick(config: config, url: url.absoluteString)
-            if !clickResult.allowed {
-                return .empty()
-            }
-        }
-        return await processLink(url.absoluteString, config: config)
-    }
-
-    // Converts a raw link string into a PostedResult with route and link type.
-    // If config is provided, web short-links are resolved before parsing.
-    @available(*, deprecated, renamed: "resolveAppLaunch")
-    public func processLink(_ rawLink: String, config: PostedConfig? = nil) async -> PostedResult {
-        Self.warnOnce("processLink(_:config:)", tag: tag, message: "[Posted] processLink() is deprecated and will be removed in 4.0.0. Use resolveAppLaunch() instead.")
-        let resolvedLink = await resolveLink(rawLink, config: config)
-        if resolvedLink == nil {
-            PostedLogger.debug(tag, "No matching link found")
-        }
-        return PostedResult(processed: true, link: resolvedLink)
-    }
-
-    // Shared delegation core for both resolveInitialLink overloads. Internal so tests can
-    // exercise the path directly when the overload's argument type is not unit-testable
-    // (e.g. UIScene.ConnectionOptions has no public initializer).
-    func _resolveInitialLink(
-        config: PostedConfig,
-        launchContext: LaunchContext?,
-        completion: @escaping @Sendable (PostedResult) -> Void
-    ) {
-        Task {
-            let result = await resolveAppLaunch(config: config, launchContext: launchContext)
-            completion(result)
-        }
-    }
-
-    @available(*, deprecated, renamed: "resolveAppLaunch")
-    public func resolveInitialLink(
-        config: PostedConfig,
-        launchOptions: [UIApplication.LaunchOptionsKey: Any]?,
-        completion: @escaping @Sendable (PostedResult) -> Void
-    ) {
-        Self.warnOnce("resolveInitialLink", tag: tag, message: "[Posted] resolveInitialLink() is deprecated and will be removed in 4.0.0. Use resolveAppLaunch() instead.")
-        _resolveInitialLink(config: config, launchContext: .launchOptions(launchOptions), completion: completion)
-    }
-
-    @available(*, deprecated, renamed: "resolveAppLaunch")
-    public func resolveInitialLink(
-        config: PostedConfig,
-        connectionOptions: UIScene.ConnectionOptions,
-        completion: @escaping @Sendable (PostedResult) -> Void
-    ) {
-        Self.warnOnce("resolveInitialLink", tag: tag, message: "[Posted] resolveInitialLink() is deprecated and will be removed in 4.0.0. Use resolveAppLaunch() instead.")
-        _resolveInitialLink(config: config, launchContext: .connectionOptions(connectionOptions), completion: completion)
     }
 
     // MARK: - resolveAppLaunch (3.0.0 facade)

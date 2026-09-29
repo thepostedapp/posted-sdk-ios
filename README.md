@@ -327,10 +327,9 @@ result for that install. This section covers what changed and how to adopt it.
 
 ### `resolveInitialLink` → `resolveAppLaunch`
 
-`resolveInitialLink` is deprecated in 3.0.0 and will be removed in the next major release (4.0).
-Replace it with `resolveAppLaunch(config:launchContext:)`:
+`resolveInitialLink` was removed in **4.0.0**. Replace it with `resolveAppLaunch(config:launchContext:)`:
 
-| 2.x (deprecated) | 3.0.0+ |
+| 2.x (removed) | 3.0.0+ |
 |---|---|
 | `resolveInitialLink(config:launchOptions:completion:)` | `resolveAppLaunch(config:launchContext: .launchOptions(launchOptions))` |
 | `resolveInitialLink(config:connectionOptions:completion:)` | `resolveAppLaunch(config:launchContext: .connectionOptions(connectionOptions))` |
@@ -349,15 +348,15 @@ Call `resetSession()` to re-arm manually; this is for testing only — do not ca
 
 ### `processLink` → handle URLs directly
 
-`processLink` is deprecated in 3.0.0. For cold-start attribution use `resolveAppLaunch`.
+`processLink` was removed in **4.0.0**. For cold-start attribution use `resolveAppLaunch`.
 For runtime deep links (links that open an already-running app), read the URL from the system
 delegate callback and navigate — no SDK call is required.
 
 ### Removal timeline
 
-Nothing is hard-removed from the public surface in 3.0.0. `resolveInitialLink` and `processLink`
-remain available as deprecated shims for this release cycle and will be removed in **4.0** (next
-major release). Update before upgrading past 3.x to avoid breaking changes.
+`resolveInitialLink` and `processLink` were deprecated in 3.0.0 and have been removed in **4.0.0**.
+The public surface is now `mountAnalytics`/`unmountAnalytics`, `resolveAppLaunch`, and `resetSession`.
+Apps still calling the removed methods must migrate before upgrading past 3.x.
 
 ---
 
