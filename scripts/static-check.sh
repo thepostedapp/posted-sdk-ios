@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Static gate — ios-detour. LINT-ONLY: the dev host's Swift 5.7.2 is older than this code targets
+# Static gate — PostedSDK iOS. LINT-ONLY: the dev host's Swift 5.7.2 is older than this code targets
 # and false-fails valid syntax, so iOS *correctness* is verified in CI (newer Xcode), not here.
 set -euo pipefail
 echo "▶ correctness: Package.swift resolves (BLOCKING)"

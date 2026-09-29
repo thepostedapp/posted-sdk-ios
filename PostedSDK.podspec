@@ -11,7 +11,7 @@ Pod::Spec.new do |s|
 
   s.homepage         = 'https://github.com/thepostedapp/posted-sdk-ios'
   s.license          = { :type => 'MIT', :file => 'LICENSE' }
-  s.author           = { 'Software Mansion' => 'yuriy@postedapp.com' }
+  s.author           = { 'Posted' => 'yuriy@postedapp.com' }
   s.source           = {
     :git => 'https://github.com/thepostedapp/posted-sdk-ios.git',
     :tag => s.version.to_s
