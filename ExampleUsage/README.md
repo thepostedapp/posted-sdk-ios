@@ -25,7 +25,7 @@ The following placeholders appear in `AppDelegate.swift`, `Info.plist`, and `Pos
 | `<YOUR_POSTED_API_KEY>`        | Posted dashboard → your app → API key   | `posted_live_abc123`       |
 | `<YOUR_POSTED_APP_ID>`         | Posted dashboard → your app → App ID    | `app_xyz789`               |
 | `<YOUR_BUNDLE_IDENTIFIER>`     | Xcode → target → General → Bundle ID   | `com.company.exampleapp`   |
-| `<YOUR_UNIVERSAL_LINK_DOMAIN>` | Posted dashboard → your app → domain   | `example.godetour.link` <!-- TODO(B4): short-link/UL domain pending; Universal Links deferred for v1 --> |
+| `<YOUR_UNIVERSAL_LINK_DOMAIN>` | Posted dashboard → your app → domain   | `<your-subdomain>.l.postedapp.com` |
 
 The example app's `Info.plist` ships with the `posted` URL scheme already registered
 (so `posted://…` opens the app). Register your own scheme there for your real app.
@@ -38,7 +38,7 @@ The example app's `Info.plist` ships with the `posted` URL scheme already regist
 
 ### 4. Configure Associated Domains
 
-In `PostedExampleApp.entitlements`, replace `<YOUR_UNIVERSAL_LINK_DOMAIN>` under `Associated Domains` with your Posted domain (e.g. `applinks:example.godetour.link`). <!-- TODO(B4): short-link/UL domain pending; Universal Links deferred for v1 -->
+In `PostedExampleApp.entitlements`, replace `<YOUR_UNIVERSAL_LINK_DOMAIN>` under `Associated Domains` with your Posted domain (e.g. `applinks:<your-subdomain>.l.postedapp.com`).
 
 ### 5. Run
 
