@@ -1,6 +1,6 @@
 // Conformance suite for the 5 PostedSDK→backend endpoints.
 // Assertions are inline/hand-coded (iOS vendors no fixture copy) against the canonical contract
-// at posted-sdk-admin/contract/posted-backend-contract.yaml (pinned v1.1.0, sha256 000488…e0e6).
+// at posted-sdk-admin/contract/posted-backend-contract.yaml (pinned v1.1.0, sha256 e6ca8f…9bd3).
 // Uses a URLProtocol stub injected via the `session` parameter added to each network method.
 import XCTest
 @testable import PostedSDK
