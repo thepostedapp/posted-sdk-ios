@@ -67,9 +67,17 @@ final class ContractFixtureChecksumTests: XCTestCase {
             text.contains("https://attr.postedapp.com"),
             "Contract must declare attr.postedapp.com as the API server."
         )
-        XCTAssertFalse(
-            text.contains("godetour.dev"),
-            "Contract must not reference the third-party godetour.dev host."
+        let pattern = try NSRegularExpression(pattern: "https?://([A-Za-z0-9._-]+)")
+        let range = NSRange(text.startIndex..<text.endIndex, in: text)
+        let foreign = pattern.matches(in: text, range: range).compactMap { match -> String? in
+            guard let r = Range(match.range(at: 1), in: text) else { return nil }
+            let host = String(text[r])
+            let allowed = host == "postedapp.com" || host.hasSuffix(".postedapp.com")
+            return allowed ? nil : host
+        }
+        XCTAssertTrue(
+            foreign.isEmpty,
+            "Contract may only reference postedapp.com hosts; found \(Set(foreign).sorted())."
         )
     }
 }
