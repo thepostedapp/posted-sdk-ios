@@ -2,14 +2,19 @@
 
 PostedSDK is an iOS SDK for handling deferred deep links. A deferred link works like a regular deep link, but survives the App Store install — a user who clicks a link before having the app installed is redirected to the right screen on first launch. PostedSDK also handles Universal Links and custom scheme links in a single unified API.
 
-> **New to Posted?** Start with the **[cross-platform quickstart](https://github.com/thepostedapp/posted-sdk-admin/blob/main/GETTING-STARTED.md)** — create an app, copy your credentials, install the SDK, initialize it, and verify, all in one place. This README is the full iOS reference.
+## Quick links
 
-## Create an account
+- **Getting-Started guide** (cross-platform golden path — create an app, install, verify): [GETTING-STARTED.md](https://github.com/thepostedapp/posted-sdk-admin/blob/main/GETTING-STARTED.md). This README is the full iOS reference.
+- **API host**: `attr.postedapp.com` (the SDK targets this by default — you do not configure it). Deep links resolve via `l.postedapp.com`.
+- **Troubleshooting**: [TROUBLESHOOTING.md](https://github.com/thepostedapp/posted-sdk-admin/blob/main/TROUBLESHOOTING.md)
+- **Backend contract redoc**: not yet live <!-- TODO(POS-589): link once the contract redoc is hosted — Firebase Hosting activation is gated on the POS-312 D1/D2 DNS decision -->
+- **Support**: see [Support](#support) below
 
-You need a Posted account to generate app credentials and configure your links.  
-Sign up here: [https://postedapp.com](https://postedapp.com) <!-- TODO(B3): update once backend/site domain confirmed -->
+## Create account
 
-## Installation
+You need a Posted account to generate app credentials (`app_id` + API key) and configure your links. Follow [**Create an app & find your credentials**](https://github.com/thepostedapp/posted-sdk-admin/blob/main/README.md#create-an-app--find-your-credentials) in the dashboard README — it covers the full create-app flow and where each credential appears afterward.
+
+## Install
 
 Latest stable release: `4.0.0`
 
@@ -43,9 +48,9 @@ end
 
 Then run `pod install`.
 
-## Usage
+## Quickstart
 
-### 1. Configure
+The fastest way to get attribution working: build a `PostedConfig` and call `resolveAppLaunch` once on cold start, passing the `LaunchContext` from your app or scene delegate.
 
 ```swift
 import PostedSDK
@@ -54,16 +59,56 @@ let config = PostedConfig(
     apiKey: "<YOUR_API_KEY>",
     appID: "<YOUR_APP_ID>"
 )
+
+// In application(_:didFinishLaunchingWithOptions:) or scene(_:willConnectTo:options:):
+Task {
+    let result = await Posted.shared.resolveAppLaunch(
+        config: config,
+        launchContext: .launchOptions(launchOptions)
+    )
+    if let link = result.link {
+        // Navigate to link.route
+    }
+}
 ```
 
-### 2. Resolve app launch (3.0.0+)
+See [Deep-link handling](#deep-link-handling) below for full app delegate / scene delegate examples, and [resolveAppLaunch](#resolveapplaunch) for fire-once semantics.
 
-Call `resolveAppLaunch` once on cold start. Pass the `LaunchContext` from your delegate so the SDK
-picks the correct attribution branch (link-present or deferred). Analytics are mounted automatically.
+## Configure
 
-**Fire-once:** `resolveAppLaunch` records the attribution result on the first call and returns the
-cached value on every subsequent call within the same install. Call `resetSession()` to re-arm
-(testing only — do not call in production).
+Beyond `apiKey` and `appID`, `PostedConfig` accepts one optional knob:
+
+- **`shouldUseClipboard`** — iOS clipboard check for deferred-link matching, defaults to `true`.
+- **`linkProcessingMode`** — controls which link sources the SDK handles (`.all` | `.webOnly` | `.deferredOnly`, default `.all`). See [Deep-link handling](#controlling-which-links-postedsdk-processes) for the full behavior table.
+
+See [Types → PostedConfig](#postedconfig) for the full type definition.
+
+## resolveAppLaunch
+
+```swift
+func resolveAppLaunch(config: PostedConfig, launchContext: LaunchContext? = nil) async -> PostedResult
+```
+
+The single unified cold-start attribution entry point. Pass the `LaunchContext` from your delegate so the SDK picks the correct attribution branch (link-present or deferred). Analytics are mounted automatically.
+
+- **Fire-once per install**: the first call resolves and caches the result; every subsequent call within the same install returns the cached value instead of re-resolving.
+- Omit `launchContext` for installs with no incoming URL (deferred-only scenarios):
+
+```swift
+let result = await Posted.shared.resolveAppLaunch(config: config)
+```
+
+### resetSession
+
+```swift
+func resetSession(allowDeferredRetry: Bool = false)
+```
+
+Re-arms the fire-once resolution so the next `resolveAppLaunch` call resolves fresh instead of returning the cached value. Testing only — do not call in production.
+
+## Deep-link handling
+
+For links that arrive while the app is already running, read the URL directly from the delegate callback and navigate — no SDK call is needed for runtime links.
 
 **App delegate:**
 
@@ -115,31 +160,7 @@ func scene(
 
 </details>
 
-**Deferred-only (no URL context):** omit `launchContext` for installs with no incoming URL:
-
-```swift
-let result = await Posted.shared.resolveAppLaunch(config: config)
-```
-
-### Continuous deep-link stream (cross-platform surface)
-
-The **continuous deep-link stream** delivers every link the app receives while it is running (warm links). It is a **separate feature from fire-once install attribution**: `resolveAppLaunch` resolves the single deferred/deep link responsible for the install exactly once (cached thereafter), whereas the continuous stream is unrelated to attribution and emits on every warm link for the life of the process. Use `resolveAppLaunch` for attribution; use the stream (or the native warm-link path below) for ongoing in-session navigation.
-
-The stream is an idiomatic convenience exposed **only on the JS/Dart wrappers**, which already sit on top of a framework-level URL event bus (React Native `Linking`, Flutter `EventChannel`). Native iOS/Android apps deliver warm links through platform lifecycle hooks instead — this divergence is **intentional, not a gap**.
-
-| Platform | Continuous stream API | Status | Warm-link path |
-|----------|----------------------|--------|----------------|
-| Flutter (`PostedSdk`) | `Stream<PostedResult> get linkStream` | ✅ present, non-deprecated (EventChannel-backed) | via `linkStream` |
-| React Native (`Posted`) | `addEventListener("url", listener) → PostedUrlSubscription` | ✅ present, non-deprecated (mirrors RN core `Linking`) | via `addEventListener` |
-| Android (`Posted`) | — none (intentional) — | ➖ not offered | `PostedDelegate.onNewIntent(intent)` → `resolveAppLaunch()` |
-| iOS (`Posted`) | — none (intentional) — | ➖ not offered | Scene/App URL handling (`scene(_:willConnectTo:)`, `openURL`, `continueUserActivity`) → `resolveAppLaunch()` |
-
-**Fire-once vs continuous** — `resolveAppLaunch` fires once per install and returns the attribution result; the continuous stream never participates in attribution and fires on every warm link.
-
-### 3. Handle runtime links
-
-For links that arrive while the app is already running, read the URL directly from the delegate
-callback and navigate — no SDK call is needed for runtime links:
+**Runtime custom scheme link:**
 
 <details>
 <summary>Custom scheme (app delegate)</summary>
@@ -156,6 +177,8 @@ func application(
 ```
 
 </details>
+
+**Runtime Universal Link:**
 
 <details>
 <summary>Universal Link (app delegate)</summary>
@@ -197,6 +220,21 @@ let config = PostedConfig(
 ```
 
 </details>
+
+### Continuous deep-link stream (cross-platform surface)
+
+The **continuous deep-link stream** delivers every link the app receives while it is running (warm links). It is a **separate feature from fire-once install attribution**: `resolveAppLaunch` resolves the single deferred/deep link responsible for the install exactly once (cached thereafter), whereas the continuous stream is unrelated to attribution and emits on every warm link for the life of the process. Use `resolveAppLaunch` for attribution; use the native warm-link path above for ongoing in-session navigation.
+
+The stream is an idiomatic convenience exposed **only on the JS/Dart wrappers**, which already sit on top of a framework-level URL event bus (React Native `Linking`, Flutter `EventChannel`). Native iOS/Android apps deliver warm links through platform lifecycle hooks instead — this divergence is **intentional, not a gap**.
+
+| Platform | Continuous stream API | Status | Warm-link path |
+|----------|----------------------|--------|----------------|
+| Flutter (`PostedSdk`) | `Stream<PostedResult> get linkStream` | ✅ present, non-deprecated (EventChannel-backed) | via `linkStream` |
+| React Native (`Posted`) | `addEventListener("url", listener) → PostedUrlSubscription` | ✅ present, non-deprecated (mirrors RN core `Linking`) | via `addEventListener` |
+| Android (`Posted`) | — none (intentional) — | ➖ not offered | `PostedDelegate.onNewIntent(intent)` → `resolveAppLaunch()` |
+| iOS (`Posted`) | — none (intentional) — | ➖ not offered | Scene/App URL handling (`scene(_:willConnectTo:)`, `openURL`, `continueUserActivity`) → `resolveAppLaunch()` |
+
+**Fire-once vs continuous** — `resolveAppLaunch` fires once per install and returns the attribution result; the continuous stream never participates in attribution and fires on every warm link.
 
 ## Analytics
 
@@ -313,13 +351,38 @@ public enum LinkProcessingMode: String {
 
 </details>
 
-## Example project
+### LaunchContext
 
-A ready-to-run example covering deferred links, Universal Links, and custom scheme links is included at [`ExampleUsage/PostedExampleAppProject`](./ExampleUsage/PostedExampleAppProject). See the [example setup guide](./ExampleUsage/README.md) for instructions.
+<details>
+<summary>LaunchContext</summary>
 
----
+```swift
+public enum LaunchContext {
+    case launchOptions([UIApplication.LaunchOptionsKey: Any]?)
+    case connectionOptions(UIScene.ConnectionOptions)
+}
+```
 
-## Migrating from 2.x
+</details>
+
+## API Reference
+
+Every public export, with a pointer to where it's documented in depth:
+
+| Export | Kind | Docs |
+|---|---|---|
+| `Posted.shared.resolveAppLaunch(config:launchContext:)` | method | [resolveAppLaunch](#resolveapplaunch) |
+| `Posted.shared.resetSession(allowDeferredRetry:)` | method | [resolveAppLaunch → resetSession](#resetsession) |
+| `Posted.shared.mountAnalytics(config:)` / `Posted.shared.unmountAnalytics()` | method | [Analytics](#analytics) |
+| `PostedAnalytics.logEvent` / `PostedAnalytics.logRetention` | method | [Analytics](#analytics) |
+| `PostedEventName` | enum | [Analytics](#analytics) |
+| `PostedConfig`, `PostedResult`, `PostedLink`, `LinkType`, `LinkProcessingMode`, `LaunchContext` | types | [Types](#types) |
+
+## Errors/Troubleshooting
+
+See the canonical [Troubleshooting & error-code reference](https://github.com/thepostedapp/posted-sdk-admin/blob/main/TROUBLESHOOTING.md) — 401s, no-match, deferred deep links not firing, clipboard edge cases, and key rotation, each with cause → how to detect → fix.
+
+## Migration
 
 PostedSDK 3.0.0 is **attribution-first**: instead of juggling several link-handling calls, your
 app calls one method — `resolveAppLaunch` — once per cold start and gets back the attribution
@@ -337,7 +400,7 @@ result for that install. This section covers what changed and how to adopt it.
 The new method is `async`/`await` — wrap the call in a `Task {}` from your delegate method. Both
 `resolveInitialLink` overloads' separate parameters are unified behind a single `LaunchContext`
 enum (`.launchOptions(...)` / `.connectionOptions(...)`) — pass the value from your app or scene
-delegate, as shown in [Resolve app launch](#2-resolve-app-launch-300).
+delegate, as shown in [resolveAppLaunch](#resolveapplaunch).
 
 ### Fire-once semantics
 
@@ -358,5 +421,25 @@ delegate callback and navigate — no SDK call is required.
 The public surface is now `mountAnalytics`/`unmountAnalytics`, `resolveAppLaunch`, and `resetSession`.
 Apps still calling the removed methods must migrate before upgrading past 3.x.
 
----
+## Versioning/compatibility
 
+- **SDK version**: `4.0.0` (aligned across iOS/Android/React Native/Flutter)
+- **Backend contract**: `1.1.0`, served from `attr.postedapp.com`
+- **Min iOS**: `13.0+` · **Min Swift**: `5.5+` (see `s.ios.deployment_target` / `s.swift_version` in [`PostedSDK.podspec`](./PostedSDK.podspec), or `platforms` / `swift-tools-version` in [`Package.swift`](./Package.swift))
+- **Cross-platform compatibility matrix**: [COMPATIBILITY.md](https://github.com/thepostedapp/posted-sdk-admin/blob/main/COMPATIBILITY.md)
+
+## Example
+
+A ready-to-run example covering deferred links, Universal Links, and custom scheme links is included at [`ExampleUsage/PostedExampleAppProject`](./ExampleUsage/PostedExampleAppProject). See the [example setup guide](./ExampleUsage/README.md) for instructions.
+
+## Support
+
+- Found a bug or have a question specific to this SDK? [Open an issue](https://github.com/thepostedapp/posted-sdk-ios/issues) on this repo.
+
+### Other posted-sdk SDKs
+
+posted-sdk is also available for other app stacks:
+
+- Android SDK: [https://github.com/thepostedapp/posted-sdk-android](https://github.com/thepostedapp/posted-sdk-android)
+- React Native SDK: [https://github.com/thepostedapp/posted-sdk-react-native](https://github.com/thepostedapp/posted-sdk-react-native)
+- Flutter SDK: [https://github.com/thepostedapp/posted-sdk-flutter](https://github.com/thepostedapp/posted-sdk-flutter)
