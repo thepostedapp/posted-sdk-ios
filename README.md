@@ -385,7 +385,7 @@ the `docs` CI job fails the build if generation breaks, so it can't silently dri
 once hosted -->; until then, build it locally:
 
 ```bash
-swift package --disable-sandbox generate-documentation --target PostedSDK
+xcodebuild docbuild -scheme PostedSDK -destination 'generic/platform=iOS' -derivedDataPath ./.docc-build
 ```
 
 ## Errors/Troubleshooting

@@ -33,6 +33,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: generate DocC API reference
-        run: >
-          swift package --allow-writing-to-directory ./.docc-build
-          generate-documentation --target PostedSDK --output-path ./.docc-build
+        # Plain `swift package generate-documentation` builds against the host (macOS) SDK,
+        # but PostedSDK is iOS-only (imports UIKit) — must build via xcodebuild for iOS,
+        # same as the `build` job's -destination 'generic/platform=iOS'.
+        run: |
+          xcodebuild docbuild \
+            -scheme PostedSDK \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath ./.docc-build
+          find ./.docc-build -name '*.doccarchive' -print -quit | grep -q . || {
+            echo "::error::no .doccarchive produced"; exit 1;
+          }
