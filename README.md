@@ -378,6 +378,16 @@ Every public export, with a pointer to where it's documented in depth:
 | `PostedEventName` | enum | [Analytics](#analytics) |
 | `PostedConfig`, `PostedResult`, `PostedLink`, `LinkType`, `LinkProcessingMode`, `LaunchContext` | types | [Types](#types) |
 
+The table above is hand-maintained. A full generated reference (every public symbol and doc
+comment) is built with [DocC](https://github.com/apple/swift-docc-plugin) on every PR to `main` —
+the `docs` CI job fails the build if generation breaks, so it can't silently drift from
+`Sources/PostedSDK`. Hosting the generated output is tracked separately <!-- TODO(POS-590): link
+once hosted -->; until then, build it locally:
+
+```bash
+swift package --disable-sandbox generate-documentation --target PostedSDK
+```
+
 ## Errors/Troubleshooting
 
 See the canonical [Troubleshooting & error-code reference](https://github.com/thepostedapp/posted-sdk-admin/blob/main/TROUBLESHOOTING.md) — 401s, no-match, deferred deep links not firing, clipboard edge cases, and key rotation, each with cause → how to detect → fix.
