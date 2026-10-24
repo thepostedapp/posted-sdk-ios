@@ -16,7 +16,7 @@ You need a Posted account to generate app credentials (`app_id` + API key) and c
 
 ## Install
 
-Latest stable release: `4.0.0`
+Latest stable release: `4.0.1`
 
 ### Requirements
 
@@ -30,7 +30,7 @@ In Xcode, go to `File > Add Package Dependencies...`, enter the repository URL, 
 Or in `Package.swift`:
 
 ```swift
-.package(url: "https://github.com/thepostedapp/posted-sdk-ios", from: "4.0.0")
+.package(url: "https://github.com/thepostedapp/posted-sdk-ios", from: "4.0.1")
 ```
 
 ### CocoaPods
@@ -42,7 +42,7 @@ platform :ios, '13.0'
 
 target 'YourAppTarget' do
   use_frameworks!
-  pod 'PostedSDK', '4.0.0'
+  pod 'PostedSDK', '4.0.1'
 end
 ```
 
@@ -105,6 +105,23 @@ func resetSession(allowDeferredRetry: Bool = false)
 ```
 
 Re-arms the fire-once resolution so the next `resolveAppLaunch` call resolves fresh instead of returning the cached value. Testing only — do not call in production.
+
+### Install reporting
+
+```swift
+func reportInstall(config: PostedConfig) async
+```
+
+Reports this install so Posted can match it to the ad click that led to it and report it to the ad network as a conversion. `resolveAppLaunch` does this automatically — call `reportInstall` yourself only if your app resolves deep links without `resolveAppLaunch`:
+
+```swift
+await Posted.shared.reportInstall(config: config)
+```
+
+- **Sent once per install**, and retried on later launches until the backend accepts it (any non-2xx, including an invalid API key, is retried) — safe to call on every launch.
+- Runs in the background: `resolveAppLaunch` doesn't wait for it, and its result is unchanged. Never throws.
+- Never reads the clipboard (no paste banner), whatever `shouldUseClipboard` is set to.
+- Not re-armed by `resetSession()`.
 
 ## Deep-link handling
 
@@ -373,6 +390,7 @@ Every public export, with a pointer to where it's documented in depth:
 |---|---|---|
 | `Posted.shared.resolveAppLaunch(config:launchContext:)` | method | [resolveAppLaunch](#resolveapplaunch) |
 | `Posted.shared.resetSession(allowDeferredRetry:)` | method | [resolveAppLaunch → resetSession](#resetsession) |
+| `Posted.shared.reportInstall(config:)` | method | [resolveAppLaunch → Install reporting](#install-reporting) |
 | `Posted.shared.mountAnalytics(config:)` / `Posted.shared.unmountAnalytics()` | method | [Analytics](#analytics) |
 | `PostedAnalytics.logEvent` / `PostedAnalytics.logRetention` | method | [Analytics](#analytics) |
 | `PostedEventName` | enum | [Analytics](#analytics) |
@@ -433,7 +451,7 @@ Apps still calling the removed methods must migrate before upgrading past 3.x.
 
 ## Versioning/compatibility
 
-- **SDK version**: `4.0.0` (aligned across iOS/Android/React Native/Flutter)
+- **SDK version**: `4.0.1` (4.0.x aligned across iOS/Android/React Native/Flutter)
 - **Backend contract**: `1.1.0`, served from `attr.postedapp.com`
 - **Min iOS**: `13.0+` · **Min Swift**: `5.5+` (see `s.ios.deployment_target` / `s.swift_version` in [`PostedSDK.podspec`](./PostedSDK.podspec), or `platforms` / `swift-tools-version` in [`Package.swift`](./Package.swift))
 - **Cross-platform compatibility matrix**: [COMPATIBILITY.md](https://github.com/thepostedapp/posted-sdk-admin/blob/main/COMPATIBILITY.md)

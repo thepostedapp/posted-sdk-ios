@@ -34,6 +34,9 @@ public class Posted {
     // fresher post-reset resolution has since taken it over — the reset must be honored, not
     // clobbered, and a de-duped caller must not trigger a duplicate network call.
     private var resolutionGeneration = 0
+    // Single-flight for the install report: resolveAppLaunch and a manual reportInstall call
+    // may race on first launch; both share this one request.
+    private var inFlightInstallReport: Task<Void, Never>?
 
     private init() {}
 
@@ -43,6 +46,9 @@ public class Posted {
     // the stale in-flight task.
     var debugResolutionGeneration: Int { resolutionGeneration }
     var debugHasInFlightResolutionTask: Bool { inFlightResolutionTask != nil }
+    // The Task itself (not a Bool like the accessor above) so tests can await the
+    // fire-and-forget install report that resolveAppLaunch starts.
+    var debugInFlightInstallReport: Task<Void, Never>? { inFlightInstallReport }
 
     public func mountAnalytics(config: PostedConfig) {
         PostedAnalytics.mount(config: config)
@@ -186,9 +192,13 @@ public class Posted {
     ) async -> PostedResult {
         mountAnalytics(config: config)
 
+        // The install report is started on every call, including the fire-once and de-dup
+        // returns: a launch whose attribution is already cached must still retry an install
+        // report that failed earlier. It is fire-and-forget and never changes the result.
         if StorageUtils.isAttributionResolved(),
            let cached = StorageUtils.getCachedAttributionResult() {
             PostedLogger.debug(tag, "resolveAppLaunch: fire-once hit, returning cached result")
+            startInstallReport(config: config, session: session)
             return cached
         }
 
@@ -196,6 +206,7 @@ public class Posted {
         // so exactly one network call is made regardless of how many callers race on first launch.
         if let existing = inFlightResolutionTask {
             PostedLogger.debug(tag, "resolveAppLaunch: de-dup, awaiting in-flight resolution")
+            startInstallReport(config: config, session: session)
             return await existing.value
         }
 
@@ -222,6 +233,9 @@ public class Posted {
             return result
         }
         inFlightResolutionTask = task
+        // Started after the resolution task so link resolution runs first on the main actor; the
+        // install report then reuses the fingerprint's shared user agent instead of its own WKWebView.
+        startInstallReport(config: config, session: session)
         defer {
             // Only clear the in-flight pointer if no resetSession() happened since this call
             // started. Otherwise a stale resolution settling after a reset would clobber the
@@ -233,6 +247,47 @@ public class Posted {
             }
         }
         return await task.value
+    }
+
+    // MARK: - Install report
+
+    /// Reports this install for ad attribution, so the backend can match it to the ad click that
+    /// led here and report it as a conversion.
+    ///
+    /// `resolveAppLaunch(config:launchContext:)` already does this automatically. Call this
+    /// directly only if your app resolves deep links without `resolveAppLaunch`. Safe to call on
+    /// every launch: the install is sent once, and retried on later launches until the backend
+    /// accepts it. Never throws. Only `apiKey` and `appID` are used from `config`; the clipboard
+    /// is never read.
+    public func reportInstall(config: PostedConfig) async {
+        await _reportInstall(config: config, session: .shared)
+    }
+
+    func _reportInstall(config: PostedConfig, session: URLSession) async {
+        await startInstallReport(config: config, session: session)?.value
+    }
+
+    @discardableResult
+    private func startInstallReport(config: PostedConfig, session: URLSession) -> Task<Void, Never>? {
+        if let existing = inFlightInstallReport { return existing }
+        guard !StorageUtils.isInstallReported() else { return nil }
+
+        let task = Task<Void, Never> { [weak self] in
+            // No clipboard: reading it shows the iOS paste banner, and install matching doesn't use it.
+            let fingerprint = await DeviceUtils.getFingerprint(shouldUseClipboard: false)
+            let deviceID = DeviceIDPersistence.shared.prepareDeviceID()
+            if await PostedNetwork.reportInstall(
+                config: config,
+                fingerprint: fingerprint,
+                deviceID: deviceID,
+                session: session
+            ) {
+                StorageUtils.markInstallReported()
+            }
+            self?.inFlightInstallReport = nil
+        }
+        inFlightInstallReport = task
+        return task
     }
 
     private func extractLaunchURL(from launchContext: LaunchContext?, config: PostedConfig) -> URL? {

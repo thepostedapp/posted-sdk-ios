@@ -10,7 +10,7 @@ enum PostedConstants {
     static let flutterSdkHeaderSelector = NSSelectorFromString("sdkHeaderValue")
     // Keep the native SDK version explicit because static linking can place PostedSDK types
     // in the host app bundle, making bundle-based version lookup return the app version.
-    static let sdkVersion = "4.0.0"
+    static let sdkVersion = "4.0.1"
     static let sdkHeaderField = "X-SDK"
     static let sdkHeaderValue: String = {
         if let markerClass = NSClassFromString(flutterMarkerClassName) as? NSObject.Type,
@@ -30,4 +30,5 @@ enum PostedConstants {
     static let analyticsEventUrl: URL? = URL(string: "https://attr.postedapp.com/api/analytics/event")
     static let analyticsRetentionUrl: URL? = URL(string: "https://attr.postedapp.com/api/analytics/retention")
     static let universalLinkClickUrl: URL? = URL(string: "https://attr.postedapp.com/api/link/universal-link-click")
+    static let installUrl: URL? = URL(string: "https://attr.postedapp.com/api/install")
 }

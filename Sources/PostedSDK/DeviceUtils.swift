@@ -35,6 +35,21 @@ class DeviceUtils {
         }
     }
 
+    // One user-agent lookup per process, shared by every fingerprint (match-link and the install
+    // report run concurrently on first launch): a single WKWebView instead of one per caller. An
+    // empty (failed) lookup is not kept, so a later fingerprint tries again.
+    @MainActor private static var userAgentTask: Task<String, Never>?
+
+    @MainActor
+    static func sharedUserAgent() async -> String {
+        if let userAgentTask { return await userAgentTask.value }
+        let task = Task { await getRealUserAgent() }
+        userAgentTask = task
+        let userAgent = await task.value
+        if userAgent.isEmpty, userAgentTask == task { userAgentTask = nil }
+        return userAgent
+    }
+
     /// FR9b read-format contract (POS-229 / POS-170 D7).
     ///
     /// The click page (C) writes the short-link URL to the iOS pasteboard *verbatim*, and the
@@ -128,7 +143,7 @@ class DeviceUtils {
 
         let locales = Locale.preferredLanguages.map { LocaleTag(languageTag: $0) }
 
-        let userAgent = await getRealUserAgent()
+        let userAgent = await sharedUserAgent()
 
         return ProbabilisticFingerprint(
             platform: "ios",

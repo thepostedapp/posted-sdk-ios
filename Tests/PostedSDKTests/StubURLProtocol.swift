@@ -16,6 +16,9 @@ final class StubURLProtocol: URLProtocol {
     // loading-queue thread, never the main/actor thread, so blocking here cannot deadlock callers.
     static var requestReceived: DispatchSemaphore?
     static var releaseResponse: DispatchSemaphore?
+    // When set, only requests to this URL go through the gate above; every other request is
+    // answered at once. Lets a test hold one endpoint while the rest of the flow completes.
+    static var gatedURL: String?
 
     static func reset() {
         responseData = Data()
@@ -24,6 +27,7 @@ final class StubURLProtocol: URLProtocol {
         requestCallCount = [:]
         requestReceived = nil
         releaseResponse = nil
+        gatedURL = nil
     }
 
     static func makeSession() -> URLSession {
@@ -47,8 +51,9 @@ final class StubURLProtocol: URLProtocol {
         // request could pick up the OTHER call's semaphore (deadlock — nothing left waiting on
         // its own releaseResponse) or its response payload. Pinning everything to the values in
         // effect when this load started makes the load immune to later reassignment.
-        let requestReceivedSemaphore = StubURLProtocol.requestReceived
-        let releaseResponseSemaphore = StubURLProtocol.releaseResponse
+        let isGated = StubURLProtocol.gatedURL.map { $0 == url.absoluteString } ?? true
+        let requestReceivedSemaphore = isGated ? StubURLProtocol.requestReceived : nil
+        let releaseResponseSemaphore = isGated ? StubURLProtocol.releaseResponse : nil
         let responseData = StubURLProtocol.responseData
         let responseStatusCode = StubURLProtocol.responseStatusCode
 

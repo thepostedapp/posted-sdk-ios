@@ -2,6 +2,16 @@
 
 All notable changes to PostedSDK iOS are documented here.
 
+## [4.0.1] — Install reporting
+
+- **Install reporting** — `resolveAppLaunch` now reports the install to `POST /api/install`
+  (fingerprint + device id), so installs from Posted `sdk` campaigns are counted and reported to
+  TikTok/Meta as conversions. Sent once per install; retried on later launches until the backend
+  accepts it, including launches that return a cached fire-once result. Never reads the
+  clipboard. Parity with the React Native SDK.
+- **`Posted.shared.reportInstall(config:)`** — reports the install without `resolveAppLaunch`, for
+  apps that resolve deep links themselves. Safe to call on every launch; never throws.
+
 ## [4.0.0] — Initial public release
 
 - CPI tracking and deep-link attribution for native iOS apps.

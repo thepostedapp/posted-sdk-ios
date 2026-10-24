@@ -16,6 +16,9 @@ final class ResolveAppLaunchTests: XCTestCase {
         session = StubURLProtocol.makeSession()
         // Re-arm fire-once and legacy session flag before each test.
         Posted.shared.resetSession(allowDeferredRetry: true)
+        // Install reporting has its own suite (InstallReportTests); armed here so the request
+        // assertions below cover link resolution only.
+        StorageUtils.markInstallReported()
     }
 
     // MARK: - Deferred branch
