@@ -42,6 +42,11 @@ private enum DocAPISnippets {
         _ = await Posted.shared.resolveAppLaunch(config: config)
     }
 
+    // README "Install reporting" snippet
+    static func reportInstallSnippet(config: PostedConfig) async {
+        await Posted.shared.reportInstall(config: config)
+    }
+
     // README "Call resetSession() to re-arm" snippet
     static func resetSessionSnippet() {
         Posted.shared.resetSession()

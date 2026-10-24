@@ -51,6 +51,9 @@ final class StorageUtilsTornClearTests: XCTestCase {
         let session = StubURLProtocol.makeSession()
         let config = PostedConfig(apiKey: "test-key", appID: "com.test.app")
         Posted.shared.resetSession(allowDeferredRetry: true)
+        // Install reporting has its own suite (InstallReportTests); armed here so the request
+        // assertions below cover link resolution only.
+        StorageUtils.markInstallReported()
 
         // Arrange the torn state directly — no live crash needed to reproduce it.
         simulateTornClearFlagGoneBlobPresent()

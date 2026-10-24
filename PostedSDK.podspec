@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'PostedSDK'
-  s.version          = '4.0.0'
+  s.version          = '4.0.1'
   s.summary          = 'PostedSDK — CPI tracking and deep link attribution for native iOS apps.'
 
   s.description      = <<-DESC

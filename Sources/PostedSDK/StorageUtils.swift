@@ -9,6 +9,9 @@ class StorageUtils {
         static let deviceIDKey = "Posted_deviceId"
         static let attributionResolvedKey = "PostedAttributionResolved"
         static let cachedAttributionResultKey = "PostedCachedAttributionResult"
+        // Same key as the RN SDK. Deliberately NOT cleared by resetSession(): an install is
+        // reported once per device.
+        static let installReportedKey = "Posted_installReported"
     }
 
     // Versioned envelope for the cached PostedResult.
@@ -29,6 +32,20 @@ class StorageUtils {
 
     static func resetFirstEntrance() {
         UserDefaults.standard.set(false, forKey: Constants.firstEntranceKey)
+    }
+
+    // MARK: - Install report
+
+    static func isInstallReported() -> Bool {
+        return UserDefaults.standard.bool(forKey: Constants.installReportedKey)
+    }
+
+    static func markInstallReported() {
+        UserDefaults.standard.set(true, forKey: Constants.installReportedKey)
+    }
+
+    static func clearInstallReported() {
+        UserDefaults.standard.removeObject(forKey: Constants.installReportedKey)
     }
 
     // MARK: - Fire-once attribution persistence

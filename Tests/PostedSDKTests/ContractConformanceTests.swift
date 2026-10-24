@@ -531,6 +531,9 @@ final class ResolveAppLaunchMatchLinkConformanceTests: XCTestCase {
         session = StubURLProtocol.makeSession()
         // Clean attribution store so fire-once actually fires the network call.
         Posted.shared.resetSession(allowDeferredRetry: true)
+        // Install reporting has its own suite (InstallReportTests); armed here so the request
+        // assertions below cover link resolution only.
+        StorageUtils.markInstallReported()
     }
 
     private func assertCommonHeaders(_ req: URLRequest, file: StaticString = #file, line: UInt = #line) {
