@@ -1,12 +1,12 @@
 Pod::Spec.new do |s|
   s.name             = 'PostedSDK'
-  s.version          = '4.0.1'
-  s.summary          = 'PostedSDK — CPI tracking and deep link attribution for native iOS apps.'
+  s.version          = '1.0.0'
+  s.summary          = 'PostedSDK — install reporting for ad attribution in native iOS apps.'
 
   s.description      = <<-DESC
-    PostedSDK provides seamless handling of deferred links, deep links, and CPI
-    attribution in native iOS applications, including link resolution, runtime
-    handling, and analytics.
+    PostedSDK reports app installs to Posted. The backend matches each install to
+    the ad click that led to it and reports it back to the ad network as a
+    conversion. One call, reportInstall, sent once per install.
   DESC
 
   s.homepage         = 'https://github.com/thepostedapp/posted-sdk-ios'

@@ -1,24 +1,18 @@
-// Tests for the install report (POST /api/install) — iOS parity with the RN SDK's reportInstall
+// Tests for the install report (POST /api/install) — parity with the RN SDK's reportInstall
 // (posted-sdk-react-native src/__tests__/reportInstall.test.ts):
 //   1. POST /api/install with SDK auth, the fingerprint and device_id, then the flag is armed
-//   2. No clickId and no clipboard read, even with shouldUseClipboard = true
+//   2. No clickId and no clipboard read
 //   3. Sent once: nothing is sent once the flag is armed
 //   4. The flag is armed only on a 2xx, so failures retry on the next launch
 //   5. Concurrent calls share one request
-//   6. resolveAppLaunch triggers it, even when returning a cached fire-once result, and
-//      returns without waiting for it
-//   7. resetSession() leaves the flag armed
+//   6. The device id is stable across reports
 import UIKit
 import XCTest
 @testable import PostedSDK
 
 @MainActor
 final class InstallReportTests: XCTestCase {
-    // shouldUseClipboard is on to prove the install report ignores it.
-    private let config = PostedConfig(apiKey: "test-api-key", appID: "com.test.app", shouldUseClipboard: true)
-    // For the resolveAppLaunch tests: match-link reads the clipboard by design, and a read in the
-    // test host blocks on the system paste prompt.
-    private let noClipboardConfig = PostedConfig(apiKey: "test-api-key", appID: "com.test.app", shouldUseClipboard: false)
+    private let config = PostedConfig(apiKey: "test-api-key", appID: "com.test.app")
     private var session: URLSession!
 
     private static let installURL = "https://attr.postedapp.com/api/install"
@@ -27,7 +21,6 @@ final class InstallReportTests: XCTestCase {
         super.setUp()
         StubURLProtocol.reset()
         session = StubURLProtocol.makeSession()
-        Posted.shared.resetSession(allowDeferredRetry: true)
         StorageUtils.clearInstallReported()
     }
 
@@ -59,15 +52,16 @@ final class InstallReportTests: XCTestCase {
             XCTAssertNotNil(json[key], "fingerprint key '\(key)' missing from install body")
         }
         XCTAssertEqual(json["platform"] as? String, "ios")
+        XCTAssertEqual(json["manufacturer"] as? String, "Apple")
         XCTAssertEqual(
             json["device_id"] as? String,
             UserDefaults.standard.string(forKey: StorageUtils.Constants.deviceIDKey),
-            "install body must carry the persisted analytics device id"
+            "install body must carry the persisted device id"
         )
         XCTAssertTrue(StorageUtils.isInstallReported())
     }
 
-    func testSendsNoClickIdAndNoPastedLinkEvenWithClipboardEnabled() async throws {
+    func testSendsNoClickIdAndNoPastedLink() async throws {
         UIPasteboard.general.string = "https://l.postedapp.com/abc123"
 
         await Posted.shared._reportInstall(config: config, session: session)
@@ -117,61 +111,17 @@ final class InstallReportTests: XCTestCase {
         XCTAssertTrue(StorageUtils.isInstallReported())
     }
 
-    func testResolveAppLaunchTriggersReport() async throws {
-        StubURLProtocol.responseData = #"{"link":null}"#.data(using: .utf8)!
-
-        _ = await Posted.shared._resolveAppLaunch(config: noClipboardConfig, launchContext: nil, session: session)
-        await Posted.shared.debugInFlightInstallReport?.value
-
-        XCTAssertEqual(StubURLProtocol.requestCallCount[Self.installURL], 1)
-        XCTAssertTrue(StorageUtils.isInstallReported())
-    }
-
-    func testResolveAppLaunchDoesNotWaitForTheInstallReport() async throws {
-        StubURLProtocol.responseData = #"{"link":"https://example.com/promo"}"#.data(using: .utf8)!
-        // Hold only the install response; match-link is answered at once.
-        let release = DispatchSemaphore(value: 0)
-        StubURLProtocol.gatedURL = Self.installURL
-        StubURLProtocol.releaseResponse = release
-
-        let result = await Posted.shared._resolveAppLaunch(config: noClipboardConfig, launchContext: nil, session: session)
-
-        XCTAssertEqual(result.link?.url, "https://example.com/promo")
-        let pending = try XCTUnwrap(
-            Posted.shared.debugInFlightInstallReport,
-            "resolveAppLaunch must return while the install report is still in flight"
-        )
-        XCTAssertFalse(StorageUtils.isInstallReported())
-
-        release.signal()
-        await pending.value
-        XCTAssertTrue(StorageUtils.isInstallReported())
-    }
-
-    func testResolveAppLaunchRetriesReportEvenWhenAttributionIsCached() async throws {
-        StorageUtils.markAttributionResolved(result: PostedResult(processed: true, link: nil))
-
-        let result = await Posted.shared._resolveAppLaunch(config: noClipboardConfig, launchContext: nil, session: session)
-        await Posted.shared.debugInFlightInstallReport?.value
-
-        XCTAssertTrue(result.processed, "the cached fire-once result must be returned unchanged")
-        XCTAssertNil(
-            StubURLProtocol.capturedRequests["https://attr.postedapp.com/api/link/match-link"],
-            "a cached launch must not re-resolve attribution"
-        )
-        XCTAssertEqual(
-            StubURLProtocol.requestCallCount[Self.installURL], 1,
-            "a cached launch must still retry an unreported install"
-        )
-    }
-
-    func testResetSessionKeepsInstallReported() async {
+    func testDeviceIDIsStableAcrossReports() async throws {
+        StubURLProtocol.responseStatusCode = 500
         await Posted.shared._reportInstall(config: config, session: session)
-        XCTAssertTrue(StorageUtils.isInstallReported())
+        let first = try XCTUnwrap(sentBody()["device_id"] as? String)
 
-        Posted.shared.resetSession(allowDeferredRetry: true)
+        StubURLProtocol.responseStatusCode = 200
+        await Posted.shared._reportInstall(config: config, session: session)
+        let second = try XCTUnwrap(sentBody()["device_id"] as? String)
 
-        XCTAssertTrue(StorageUtils.isInstallReported(), "an install is reported once per device")
+        XCTAssertEqual(first, second, "a retry must carry the same device id as the failed attempt")
+        XCTAssertFalse(first.isEmpty)
     }
 }
 

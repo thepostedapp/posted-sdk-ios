@@ -12,7 +12,7 @@ final class StubURLProtocol: URLProtocol {
     // Gated handshake: when set, startLoading() signals `requestReceived` as soon as it has
     // captured the request, then blocks on `releaseResponse` before sending the response. This
     // lets a test deterministically force overlap between an in-flight network call and other
-    // work (e.g. resetSession()) without relying on sleeps/timing. Both run on URLSession's own
+    // work without relying on sleeps/timing. Both run on URLSession's own
     // loading-queue thread, never the main/actor thread, so blocking here cannot deadlock callers.
     static var requestReceived: DispatchSemaphore?
     static var releaseResponse: DispatchSemaphore?

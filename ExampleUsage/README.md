@@ -1,53 +1,25 @@
 # PostedSDK iOS Example
 
-This example demonstrates all three link types supported by the PostedSDK:
-
-- **Deferred link** — resolved on first launch after install
-- **Universal Link** — http/https link handled while the app is installed
-- **Custom scheme link** — e.g. `posted://product/42` (the example app pre-registers the `posted` scheme)
+A minimal app that calls `reportInstall` on launch and shows a log of what happened.
 
 ## Prerequisites
 
-You need a Posted account with an app configured. Sign up at [postedapp.com](https://postedapp.com) <!-- TODO(B3): update once backend/site domain confirmed --> if you haven't already.
+You need a Posted account with an app configured. See [Create an app & find your credentials](https://github.com/thepostedapp/posted-sdk-admin/blob/main/README.md#create-an-app--find-your-credentials).
 
 ## Setup
 
-### 1. Open the project
+1. Open `PostedExampleAppProject/PostedExampleApp.xcodeproj` in Xcode.
+2. In `AppDelegate.swift`, replace the two placeholders:
 
-Open `PostedExampleAppProject/PostedExampleApp.xcodeproj` in Xcode.
+   | Placeholder             | Where to find it                      |
+   | ----------------------- | ------------------------------------- |
+   | `<YOUR_POSTED_API_KEY>` | Posted dashboard → your app → API key |
+   | `<YOUR_POSTED_APP_ID>`  | Posted dashboard → your app → App ID  |
 
-### 2. Replace placeholders
+3. Select a simulator or device and press **Run**.
 
-The following placeholders appear in `AppDelegate.swift`, `Info.plist`, and `PostedExampleApp.entitlements`:
+## What to expect
 
-| Placeholder                    | Where to find it                        | Example value              |
-| ------------------------------ | --------------------------------------- | -------------------------- |
-| `<YOUR_POSTED_API_KEY>`        | Posted dashboard → your app → API key   | `a3f1…9c2e` (64-char hex)       |
-| `<YOUR_POSTED_APP_ID>`         | Posted dashboard → your app → App ID    | `app_xyz789`               |
-| `<YOUR_BUNDLE_IDENTIFIER>`     | Xcode → target → General → Bundle ID   | `com.company.exampleapp`   |
-| `<YOUR_UNIVERSAL_LINK_DOMAIN>` | Posted dashboard → your app → domain   | `<your-subdomain>.l.postedapp.com` |
-
-The example app's `Info.plist` ships with the `posted` URL scheme already registered
-(so `posted://…` opens the app). Register your own scheme there for your real app.
-
-### 3. Configure URL scheme
-
-`Info.plist` already registers the `posted` scheme under `CFBundleURLSchemes`, so
-`posted://…` links open the app out of the box. To use your own scheme instead, replace
-`posted` with your chosen scheme.
-
-### 4. Configure Associated Domains
-
-In `PostedExampleApp.entitlements`, replace `<YOUR_UNIVERSAL_LINK_DOMAIN>` under `Associated Domains` with your Posted domain (e.g. `applinks:<your-subdomain>.l.postedapp.com`).
-
-### 5. Run
-
-Select a simulator or device and press **Run** in Xcode.
-
-## Testing
-
-| Scenario        | How to trigger                                                             |
-| --------------- | -------------------------------------------------------------------------- |
-| Deferred link   | Create a link in the Posted dashboard, open it on a fresh install          |
-| Universal Link  | Open `https://<YOUR_UNIVERSAL_LINK_DOMAIN>/...` on a device with the app  |
-| Custom scheme   | Open `posted://product/42` from Safari or another app                     |
+On the first launch the SDK posts the install report. Open Console, filter by the
+`com.postedapp.posted` subsystem, and look for `Install reported`. Later launches send nothing.
+Delete the app and run it again to report a fresh install.
