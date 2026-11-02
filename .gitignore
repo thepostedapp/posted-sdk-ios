@@ -1,0 +1,11 @@
+.DS_Store
+/.build
+/Packages
+/.docc-build
+# Library package — consumers resolve their own dependency graph; don't pin ours in git.
+/Package.resolved
+xcuserdata/
+DerivedData/
+.swiftpm/configuration/registries.json
+.swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata
+.netrc
