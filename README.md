@@ -5,6 +5,7 @@
 The SDK has one function, `reportInstall(config:)`. Call it on every app launch. It sends the report once per install.
 
 - [Requirements](#requirements)
+- [Get your app ID and API key](#get-your-app-id-and-api-key)
 - [1. Install](#1-install)
 - [2. Report the install](#2-report-the-install)
 - [3. Verify the integration](#3-verify-the-integration)
@@ -17,7 +18,16 @@ The SDK has one function, `reportInstall(config:)`. Call it on every app launch.
 
 - iOS 13.0+
 - Swift 5.5+
-- An app and API key from the Posted dashboard. See [Create an app & find your credentials](https://github.com/thepostedapp/posted-sdk-admin/blob/main/README.md#create-an-app--find-your-credentials).
+- An app ID and API key from the Posted dashboard. See [Get your app ID and API key](#get-your-app-id-and-api-key).
+
+## Get your app ID and API key
+
+Both come from the Posted dashboard at [app.postedapp.com/dashboard/settings](https://app.postedapp.com/dashboard/settings), under **Posted SDK**.
+
+1. Under **Apps**, click **Add app** and enter your app's details. The dashboard shows its **app ID** (`app_…`).
+2. Under **API keys**, click **Create key**. Copy the key when it is shown; it is not displayed again.
+
+Pass these as `appID` and `apiKey` in `PostedConfig`. One API key works for all apps in your account.
 
 ## 1. Install
 
@@ -78,8 +88,8 @@ Posted.shared.reportInstall(config: PostedConfig) async
 
 | Field    | Type     | Required | Description                      |
 | -------- | -------- | -------- | -------------------------------- |
-| `apiKey` | `String` | Yes      | Your API key from the dashboard. |
-| `appID`  | `String` | Yes      | Your app ID from the dashboard.  |
+| `apiKey` | `String` | Yes      | API key from the dashboard, **Posted SDK → API keys**. |
+| `appID`  | `String` | Yes      | App ID from the dashboard, **Posted SDK → Apps**.      |
 
 The SDK stores two keys in `UserDefaults`, both prefixed with `Posted_`: the "install reported" flag and a device ID. If the app is deleted and reinstalled, the install is reported again.
 
