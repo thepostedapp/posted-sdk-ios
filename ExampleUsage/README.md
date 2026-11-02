@@ -4,7 +4,7 @@ A minimal app that calls `reportInstall` on launch and shows a log of what happe
 
 ## Prerequisites
 
-You need a Posted account with an app configured. See [Create an app & find your credentials](https://github.com/thepostedapp/posted-sdk-admin/blob/main/README.md#create-an-app--find-your-credentials).
+You need a Posted account. Create an app and an API key at [app.postedapp.com/dashboard/settings](https://app.postedapp.com/dashboard/settings) under **Posted SDK** (see the main README's [Get your app ID and API key](../README.md#get-your-app-id-and-api-key)).
 
 ## Setup
 
@@ -13,8 +13,8 @@ You need a Posted account with an app configured. See [Create an app & find your
 
    | Placeholder             | Where to find it                      |
    | ----------------------- | ------------------------------------- |
-   | `<YOUR_POSTED_API_KEY>` | Posted dashboard → your app → API key |
-   | `<YOUR_POSTED_APP_ID>`  | Posted dashboard → your app → App ID  |
+   | `<YOUR_POSTED_API_KEY>` | Dashboard → Settings → Posted SDK → API keys → Create key |
+   | `<YOUR_POSTED_APP_ID>`  | Dashboard → Settings → Posted SDK → Apps → Add app       |
 
 3. Select a simulator or device and press **Run**.
 
