@@ -24,7 +24,7 @@ The SDK has one function, `reportInstall(config:)`. Call it on every app launch.
 
 Both come from the Posted dashboard at [app.postedapp.com/dashboard/settings](https://app.postedapp.com/dashboard/settings), under **Posted SDK**.
 
-1. Under **Apps**, click **Add app** and enter your app's details. The dashboard shows its **app ID** (`app_…`).
+1. Under **Apps**, click **Add app**, fill in the form and submit it. The dashboard generates the **app ID** (`app_…`) for the new app.
 2. Under **API keys**, click **Create key**. Copy the key when it is shown; it is not displayed again.
 
 Pass these as `appID` and `apiKey` in `PostedConfig`. One API key works for all apps in your account.
