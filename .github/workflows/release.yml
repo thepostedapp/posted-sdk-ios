@@ -80,7 +80,6 @@ jobs:
           exit 1
 
       - name: Create GitHub Release
-        if: github.event_name == 'push'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
