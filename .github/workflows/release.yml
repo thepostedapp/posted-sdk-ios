@@ -1,0 +1,88 @@
+name: Release
+
+# Publishes PostedSDK on every version tag.
+#
+# Swift Package Manager needs nothing beyond the tag itself: consumers resolve
+# `from: "X.Y.Z"` straight from this repo. CocoaPods needs the podspec pushed to
+# trunk, which this workflow does with the COCOAPODS_TRUNK_TOKEN secret (the
+# session token from `pod trunk register`).
+#
+# Tag format is the bare version (`1.0.1`, no `v`): the podspec's `:tag` is
+# `s.version.to_s`, so the git tag and the pod version must be the same string.
+
+on:
+  push:
+    tags:
+      - "[0-9]+.[0-9]+.[0-9]+"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Existing tag to publish to CocoaPods (e.g. 1.0.1)"
+        required: true
+
+jobs:
+  publish:
+    runs-on: macos-14
+    permissions:
+      contents: write # creates the GitHub Release
+    concurrency:
+      group: publish-${{ github.ref }}
+      cancel-in-progress: false
+
+    steps:
+      - name: Resolve version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "version=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.version.outputs.version }}
+
+      - name: Check podspec and SDK version match the tag
+        run: |
+          v="${{ steps.version.outputs.version }}"
+          pod_v=$(sed -nE "s/^ *s\.version *= *'([^']+)'.*/\1/p" PostedSDK.podspec)
+          sdk_v=$(sed -nE 's/.*sdkVersion = "([^"]+)".*/\1/p' Sources/PostedSDK/PostedConstants.swift)
+          echo "tag=$v podspec=$pod_v sdkVersion=$sdk_v"
+          [ "$pod_v" = "$v" ] || { echo "::error::podspec version $pod_v != tag $v"; exit 1; }
+          [ "$sdk_v" = "$v" ] || { echo "::error::PostedConstants.sdkVersion $sdk_v != tag $v"; exit 1; }
+
+      - name: Install CocoaPods
+        run: sudo gem install cocoapods --no-document
+
+      - name: Push to CocoaPods trunk
+        env:
+          COCOAPODS_TRUNK_TOKEN: ${{ secrets.COCOAPODS_TRUNK_TOKEN }}
+        run: |
+          v="${{ steps.version.outputs.version }}"
+          if pod trunk info PostedSDK 2>/dev/null | grep -qE "^\s*- $v\b"; then
+            echo "PostedSDK $v is already on trunk; nothing to do"
+            exit 0
+          fi
+          # trunk's GitHub commit step times out intermittently after the spec was
+          # accepted, so retry and re-check instead of failing on the first timeout.
+          for attempt in 1 2 3 4 5; do
+            if pod trunk push PostedSDK.podspec --allow-warnings; then exit 0; fi
+            echo "push attempt $attempt failed; checking trunk state"
+            sleep 60
+            if pod trunk info PostedSDK 2>/dev/null | grep -qE "^\s*- $v\b"; then
+              echo "PostedSDK $v is on trunk"
+              exit 0
+            fi
+          done
+          echo "::error::could not publish PostedSDK $v to trunk after 5 attempts"
+          exit 1
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          v="${{ steps.version.outputs.version }}"
+          gh release view "$v" >/dev/null 2>&1 && exit 0
+          gh release create "$v" --title "$v" --notes "PostedSDK $v. SPM: \`from: \"$v\"\`. CocoaPods: \`pod 'PostedSDK', '~> $v'\`."

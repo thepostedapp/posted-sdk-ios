@@ -1,0 +1,70 @@
+name: ci
+on:
+  pull_request: {}
+  push: { branches: [main] }
+jobs:
+  static:                       # mirrors scripts/static-check.sh (lint-only)
+    runs-on: macos-14           # newer Xcode/Swift than the dev host
+    steps:
+      - uses: actions/checkout@v4
+      - run: brew install swiftlint swiftformat
+      - run: bash scripts/static-check.sh
+  build:                        # the iOS correctness authority (Swift 5.9+ compiles this code)
+    needs: static
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: build SPM library for iOS
+        run: xcodebuild -scheme PostedSDK -destination 'generic/platform=iOS' build
+      - name: validate podspec
+        run: |
+          sudo gem install cocoapods --no-document
+          pod lib lint PostedSDK.podspec --allow-warnings
+  test:                         # SDK→contract conformance suite (PostedSDKTests target)
+    needs: static
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: pick an iPhone simulator
+        # Runner images don't always ship an iOS simulator runtime. Without one, xcodebuild
+        # silently falls back to "My Mac" and the iOS-only sources fail with "no such module
+        # UIKit". Pick a concrete device by id, installing the iOS platform if needed, and
+        # fail clearly when none can be found.
+        run: |
+          pick() {
+            xcrun simctl list devices available --json | python3 -c '
+          import json, sys
+          d = json.load(sys.stdin)["devices"]
+          c = [x for rt, devs in d.items() if "iOS" in rt for x in devs
+               if x.get("isAvailable") and x["name"].startswith("iPhone")]
+          print(c[-1]["udid"] if c else "")'
+          }
+          UDID=$(pick)
+          if [ -z "$UDID" ]; then
+            echo "no iOS simulator available; downloading the iOS platform"
+            sudo xcodebuild -downloadPlatform iOS
+            UDID=$(pick)
+          fi
+          [ -n "$UDID" ] || { echo "::error::no available iPhone simulator on this runner"; xcrun simctl list devices; exit 1; }
+          xcrun simctl boot "$UDID" || true
+          xcrun simctl list devices | grep "$UDID"
+          echo "SIMULATOR_UDID=$UDID" >> "$GITHUB_ENV"
+      - name: run conformance tests
+        run: xcodebuild -scheme PostedSDK -destination "platform=iOS Simulator,id=$SIMULATOR_UDID" test
+  docs:                         # anti-drift guard: API reference must generate cleanly (POS-617)
+    needs: static
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: generate DocC API reference
+        # Plain `swift package generate-documentation` builds against the host (macOS) SDK,
+        # but PostedSDK is iOS-only (imports UIKit) — must build via xcodebuild for iOS,
+        # same as the `build` job's -destination 'generic/platform=iOS'.
+        run: |
+          xcodebuild docbuild \
+            -scheme PostedSDK \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath ./.docc-build
+          find ./.docc-build -name '*.doccarchive' -print -quit | grep -q . || {
+            echo "::error::no .doccarchive produced"; exit 1;
+          }
