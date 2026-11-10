@@ -27,6 +27,8 @@ struct InstallContext: Codable {
     let timezone: String
     let userAgent: String
     let timestamp: Int64
+    /// `store` for an App Store build, `development` for debug, TestFlight, ad hoc or simulator builds.
+    let installSource: String
 }
 
 struct LocaleTag: Codable {

@@ -53,6 +53,7 @@ final class InstallReportTests: XCTestCase {
         }
         XCTAssertEqual(json["platform"] as? String, "ios")
         XCTAssertEqual(json["manufacturer"] as? String, "Apple")
+        XCTAssertEqual(json["installSource"] as? String, "development", "simulator builds are development builds")
         XCTAssertEqual(
             json["device_id"] as? String,
             UserDefaults.standard.string(forKey: StorageUtils.Constants.deviceIDKey),

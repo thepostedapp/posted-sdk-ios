@@ -63,7 +63,23 @@ enum DeviceUtils {
             locale: locales,
             timezone: TimeZone.current.identifier,
             userAgent: userAgent,
-            timestamp: Int64(Date().timeIntervalSince1970 * 1000)
+            timestamp: Int64(Date().timeIntervalSince1970 * 1000),
+            installSource: installSource
         )
+    }
+
+    // Development, ad hoc and enterprise builds embed a provisioning profile;
+    // TestFlight builds carry a sandbox receipt.
+    private static var installSource: String {
+        #if targetEnvironment(simulator)
+        return "development"
+        #else
+        let bundle = Bundle.main
+        if bundle.path(forResource: "embedded", ofType: "mobileprovision") != nil
+            || bundle.appStoreReceiptURL?.lastPathComponent == "sandboxReceipt" {
+            return "development"
+        }
+        return "store"
+        #endif
     }
 }
