@@ -55,4 +55,40 @@ enum PostedNetwork {
             return false
         }
     }
+
+    /// POSTs the RevenueCat app user id for this install. Returns true only on a 2xx. Never throws.
+    static func reportRevenueCatUser(
+        config: PostedConfig,
+        deviceID: String,
+        revenueCatUserID: String,
+        session: URLSession = .shared
+    ) async -> Bool {
+        guard let endpoint = PostedConstants.revenueCatUserUrl,
+              let body = try? JSONSerialization.data(
+                  withJSONObject: ["device_id": deviceID, "rc_user_id": revenueCatUserID]
+              ) else {
+            PostedLogger.error(tag, "[Posted:REVENUECAT_ERROR] Failed to build RevenueCat user request")
+            return false
+        }
+
+        var request = URLRequest(url: endpoint)
+        request.httpMethod = "POST"
+        request.timeoutInterval = 30
+        applyHeaders(to: &request, config: config)
+        request.httpBody = body
+
+        do {
+            let (_, response) = try await session.data(for: request)
+            guard let http = response as? HTTPURLResponse, (200 ... 299).contains(http.statusCode) else {
+                let status = (response as? HTTPURLResponse)?.statusCode ?? -1
+                PostedLogger.warn(tag, "[Posted:REVENUECAT_ERROR] Failed to report RevenueCat user: \(status)")
+                return false
+            }
+            PostedLogger.debug(tag, "RevenueCat user reported")
+            return true
+        } catch {
+            PostedLogger.error(tag, "[Posted:REVENUECAT_ERROR] Error reporting RevenueCat user:", error: error)
+            return false
+        }
+    }
 }
