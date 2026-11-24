@@ -12,6 +12,7 @@ public class Posted {
     private let tag = "Posted"
     // Single-flight: concurrent callers on first launch share one request.
     private var inFlightInstallReport: Task<Void, Never>?
+    private var inFlightRevenueCatUserReport: Task<Void, Never>?
 
     private init() {}
 
@@ -48,6 +49,39 @@ public class Posted {
             self?.inFlightInstallReport = nil
         }
         inFlightInstallReport = task
+        await task.value
+    }
+
+    /// Links the RevenueCat app user id to this install, so purchases can be attributed.
+    ///
+    /// Call it after `Purchases.configure(...)`. The id is sent once per install, and retried on
+    /// later calls until the backend accepts it. Never throws.
+    public func setRevenueCatUserId(_ id: String, config: PostedConfig) async {
+        await _setRevenueCatUserId(id, config: config, session: .shared)
+    }
+
+    func _setRevenueCatUserId(_ id: String, config: PostedConfig, session: URLSession) async {
+        if let existing = inFlightRevenueCatUserReport {
+            await existing.value
+            return
+        }
+        guard !id.isEmpty, !StorageUtils.isRevenueCatUserReported() else { return }
+
+        let task = Task<Void, Never> { [weak self] in
+            // The backend links the id to an existing install, so the install goes first.
+            await self?._reportInstall(config: config, session: session)
+            if StorageUtils.isInstallReported(),
+               await PostedNetwork.reportRevenueCatUser(
+                   config: config,
+                   deviceID: DeviceIDPersistence.shared.prepareDeviceID(),
+                   revenueCatUserID: id,
+                   session: session
+               ) {
+                StorageUtils.markRevenueCatUserReported()
+            }
+            self?.inFlightRevenueCatUserReport = nil
+        }
+        inFlightRevenueCatUserReport = task
         await task.value
     }
 }

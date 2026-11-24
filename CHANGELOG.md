@@ -2,6 +2,15 @@
 
 All notable changes to `PostedSDK` iOS are documented here.
 
+## [1.1.0]
+
+### Added
+
+- **`Posted.shared.setRevenueCatUserId(_:config:)`** — links the RevenueCat app
+  user ID to the install, so purchases can be attributed to the campaign. Call
+  it after `Purchases.configure(...)`. Sent once per install, retried on later
+  calls until the backend accepts it, never throws.
+
 ## [1.0.2]
 
 ### Added
