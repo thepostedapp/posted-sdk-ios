@@ -11,6 +11,7 @@ The SDK reports installs only. It does not report purchases, signups or other in
 - [1. Install](#1-install)
 - [2. Report the install](#2-report-the-install)
 - [3. Verify the integration](#3-verify-the-integration)
+- [RevenueCat](#revenuecat)
 - [Configuration](#configuration)
 - [Privacy](#privacy)
 - [Troubleshooting](#troubleshooting)
@@ -40,7 +41,7 @@ In Xcode, go to `File > Add Package Dependencies...`, enter the repository URL, 
 Or in `Package.swift`:
 
 ```swift
-.package(url: "https://github.com/thepostedapp/posted-sdk-ios", from: "1.0.1")
+.package(url: "https://github.com/thepostedapp/posted-sdk-ios", from: "1.1.0")
 ```
 
 ### CocoaPods
@@ -52,7 +53,7 @@ platform :ios, '13.0'
 
 target 'YourAppTarget' do
   use_frameworks!
-  pod 'PostedSDK', '~> 1.0.1'
+  pod 'PostedSDK', '~> 1.1.0'
 end
 ```
 
@@ -83,6 +84,20 @@ You don't need to wait for it. It never throws, and it doesn't block app startup
 2. Run the app with a **fresh install**. Deleting the app clears the SDK's storage, so a reinstall reports again.
 3. Watch the Console logs for the `com.postedapp.posted` subsystem. On success you'll see `Install reported`. On failure, a line starting with `[Posted:INSTALL_ERROR]` (see [Troubleshooting](#troubleshooting)).
 
+## RevenueCat
+
+If your app uses RevenueCat, pass its app user ID to Posted after `Purchases.configure(...)`. Posted uses it to attribute purchases to your campaigns.
+
+```swift
+Purchases.configure(withAPIKey: "<REVENUECAT_API_KEY>")
+
+Task {
+    await Posted.shared.setRevenueCatUserId(Purchases.shared.appUserID, config: config)
+}
+```
+
+Call it on every launch. The ID is sent once per install, and it never throws.
+
 ## Configuration
 
 ```swift
@@ -94,7 +109,7 @@ Posted.shared.reportInstall(config: PostedConfig) async
 | `apiKey` | `String` | Yes      | API key from the dashboard, **Posted SDK → API keys**. |
 | `appID`  | `String` | Yes      | App ID from the dashboard, **Posted SDK → Apps**.      |
 
-The SDK stores two keys in `UserDefaults`, both prefixed with `Posted_`: the "install reported" flag and a device ID. If the app is deleted and reinstalled, the install is reported again.
+The SDK stores three keys in `UserDefaults`, all prefixed with `Posted_`: the "install reported" flag, the "RevenueCat user reported" flag and a device ID. If the app is deleted and reinstalled, the install is reported again.
 
 
 ## Privacy

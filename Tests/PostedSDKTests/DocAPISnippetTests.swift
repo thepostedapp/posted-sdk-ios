@@ -20,6 +20,13 @@ private enum DocAPISnippets {
             await Posted.shared.reportInstall(config: config)
         }
     }
+
+    // README "Attribute RevenueCat purchases"
+    static func setRevenueCatUserIdSnippet(config: PostedConfig, appUserID: String) {
+        Task {
+            await Posted.shared.setRevenueCatUserId(appUserID, config: config)
+        }
+    }
 }
 
 final class DocAPISnippetTests: XCTestCase {
