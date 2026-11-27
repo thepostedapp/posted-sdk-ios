@@ -12,7 +12,7 @@ public class Posted {
     private let tag = "Posted"
     // Single-flight: concurrent callers on first launch share one request.
     private var inFlightInstallReport: Task<Void, Never>?
-    private var inFlightRevenueCatUserReport: Task<Void, Never>?
+    private var inFlightPurchasesUserReport: Task<Void, Never>?
 
     private init() {}
 
@@ -52,36 +52,36 @@ public class Posted {
         await task.value
     }
 
-    /// Links the RevenueCat app user id to this install, so purchases can be attributed.
+    /// Links the RevenueCat or Superwall user id to this install, so purchases can be attributed.
     ///
-    /// Call it after `Purchases.configure(...)`. The id is sent once per install, and retried on
+    /// Call it after the purchases SDK is configured. The id is sent once per install, and retried on
     /// later calls until the backend accepts it. Never throws.
-    public func setRevenueCatUserId(_ id: String, config: PostedConfig) async {
-        await _setRevenueCatUserId(id, config: config, session: .shared)
+    public func setPurchasesUserId(_ id: String, config: PostedConfig) async {
+        await _setPurchasesUserId(id, config: config, session: .shared)
     }
 
-    func _setRevenueCatUserId(_ id: String, config: PostedConfig, session: URLSession) async {
-        if let existing = inFlightRevenueCatUserReport {
+    func _setPurchasesUserId(_ id: String, config: PostedConfig, session: URLSession) async {
+        if let existing = inFlightPurchasesUserReport {
             await existing.value
             return
         }
-        guard !id.isEmpty, !StorageUtils.isRevenueCatUserReported() else { return }
+        guard !id.isEmpty, !StorageUtils.isPurchasesUserReported() else { return }
 
         let task = Task<Void, Never> { [weak self] in
             // The backend links the id to an existing install, so the install goes first.
             await self?._reportInstall(config: config, session: session)
             if StorageUtils.isInstallReported(),
-               await PostedNetwork.reportRevenueCatUser(
+               await PostedNetwork.reportPurchasesUser(
                    config: config,
                    deviceID: DeviceIDPersistence.shared.prepareDeviceID(),
-                   revenueCatUserID: id,
+                   purchasesUserID: id,
                    session: session
                ) {
-                StorageUtils.markRevenueCatUserReported()
+                StorageUtils.markPurchasesUserReported()
             }
-            self?.inFlightRevenueCatUserReport = nil
+            self?.inFlightPurchasesUserReport = nil
         }
-        inFlightRevenueCatUserReport = task
+        inFlightPurchasesUserReport = task
         await task.value
     }
 }
