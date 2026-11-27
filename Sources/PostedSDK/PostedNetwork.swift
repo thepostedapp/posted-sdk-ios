@@ -56,18 +56,18 @@ enum PostedNetwork {
         }
     }
 
-    /// POSTs the RevenueCat app user id for this install. Returns true only on a 2xx. Never throws.
-    static func reportRevenueCatUser(
+    /// POSTs the purchases user id for this install. Returns true only on a 2xx. Never throws.
+    static func reportPurchasesUser(
         config: PostedConfig,
         deviceID: String,
-        revenueCatUserID: String,
+        purchasesUserID: String,
         session: URLSession = .shared
     ) async -> Bool {
-        guard let endpoint = PostedConstants.revenueCatUserUrl,
+        guard let endpoint = PostedConstants.purchasesUserUrl,
               let body = try? JSONSerialization.data(
-                  withJSONObject: ["device_id": deviceID, "rc_user_id": revenueCatUserID]
+                  withJSONObject: ["device_id": deviceID, "purchases_user_id": purchasesUserID]
               ) else {
-            PostedLogger.error(tag, "[Posted:REVENUECAT_ERROR] Failed to build RevenueCat user request")
+            PostedLogger.error(tag, "[Posted:PURCHASES_ERROR] Failed to build purchases user request")
             return false
         }
 
@@ -81,13 +81,13 @@ enum PostedNetwork {
             let (_, response) = try await session.data(for: request)
             guard let http = response as? HTTPURLResponse, (200 ... 299).contains(http.statusCode) else {
                 let status = (response as? HTTPURLResponse)?.statusCode ?? -1
-                PostedLogger.warn(tag, "[Posted:REVENUECAT_ERROR] Failed to report RevenueCat user: \(status)")
+                PostedLogger.warn(tag, "[Posted:PURCHASES_ERROR] Failed to report purchases user: \(status)")
                 return false
             }
-            PostedLogger.debug(tag, "RevenueCat user reported")
+            PostedLogger.debug(tag, "Purchases user reported")
             return true
         } catch {
-            PostedLogger.error(tag, "[Posted:REVENUECAT_ERROR] Error reporting RevenueCat user:", error: error)
+            PostedLogger.error(tag, "[Posted:PURCHASES_ERROR] Error reporting purchases user:", error: error)
             return false
         }
     }

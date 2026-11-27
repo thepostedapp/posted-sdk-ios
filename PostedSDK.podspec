@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'PostedSDK'
-  s.version          = '1.1.0'
+  s.version          = '1.1.1'
   s.summary          = 'PostedSDK — install reporting for ad attribution in native iOS apps.'
 
   s.description      = <<-DESC

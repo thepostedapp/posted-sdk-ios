@@ -1,5 +1,5 @@
-// Tests for the RevenueCat user link (POST /api/revenueCatUser):
-//   1. POST /api/revenueCatUser with SDK auth, the install's device_id and rc_user_id, then the flag is armed
+// Tests for the purchases user link (POST /api/purchasesUser):
+//   1. POST /api/purchasesUser with SDK auth, the install's device_id and purchases_user_id, then the flag is armed
 //   2. The install is reported first; nothing is sent while it stays unreported
 //   3. Sent once: nothing is sent once the flag is armed
 //   4. The flag is armed only on a 2xx, so failures retry on the next call
@@ -8,24 +8,24 @@ import XCTest
 @testable import PostedSDK
 
 @MainActor
-final class RevenueCatUserTests: XCTestCase {
+final class PurchasesUserTests: XCTestCase {
     private let config = PostedConfig(apiKey: "test-api-key", appID: "com.test.app")
     private var session: URLSession!
 
     private static let installURL = "https://attr.postedapp.com/api/install"
-    private static let revenueCatUserURL = "https://attr.postedapp.com/api/revenueCatUser"
+    private static let purchasesUserURL = "https://attr.postedapp.com/api/purchasesUser"
 
     override func setUp() {
         super.setUp()
         StubURLProtocol.reset()
         session = StubURLProtocol.makeSession()
         StorageUtils.clearInstallReported()
-        StorageUtils.clearRevenueCatUserReported()
+        StorageUtils.clearPurchasesUserReported()
     }
 
     override func tearDown() {
         StorageUtils.clearInstallReported()
-        StorageUtils.clearRevenueCatUserReported()
+        StorageUtils.clearPurchasesUserReported()
         super.tearDown()
     }
 
@@ -35,51 +35,51 @@ final class RevenueCatUserTests: XCTestCase {
     }
 
     func testReportsInstallThenPostsDeviceIDAndUserIDWithSDKAuthThenArmsFlag() async throws {
-        await Posted.shared._setRevenueCatUserId("rc-user-1", config: config, session: session)
+        await Posted.shared._setPurchasesUserId("rc-user-1", config: config, session: session)
 
         XCTAssertEqual(StubURLProtocol.requestCallCount[Self.installURL], 1)
-        let req = try XCTUnwrap(StubURLProtocol.capturedRequests[Self.revenueCatUserURL])
+        let req = try XCTUnwrap(StubURLProtocol.capturedRequests[Self.purchasesUserURL])
         XCTAssertEqual(req.httpMethod, "POST")
         XCTAssertEqual(req.value(forHTTPHeaderField: "Content-Type"), "application/json")
         XCTAssertEqual(req.value(forHTTPHeaderField: "Authorization"), "Bearer test-api-key")
         XCTAssertEqual(req.value(forHTTPHeaderField: "X-App-ID"), "com.test.app")
         XCTAssertEqual(req.value(forHTTPHeaderField: "X-SDK"), PostedConstants.sdkHeaderValue)
 
-        let json = try body(of: Self.revenueCatUserURL)
+        let json = try body(of: Self.purchasesUserURL)
         XCTAssertEqual(json.count, 2)
-        XCTAssertEqual(json["rc_user_id"] as? String, "rc-user-1")
+        XCTAssertEqual(json["purchases_user_id"] as? String, "rc-user-1")
         XCTAssertEqual(
             json["device_id"] as? String,
             try body(of: Self.installURL)["device_id"] as? String,
             "the link must carry the device id the install was reported with"
         )
-        XCTAssertTrue(StorageUtils.isRevenueCatUserReported())
+        XCTAssertTrue(StorageUtils.isPurchasesUserReported())
     }
 
     func testSkipsTheInstallReportWhenAlreadyReported() async {
         StorageUtils.markInstallReported()
 
-        await Posted.shared._setRevenueCatUserId("rc-user-1", config: config, session: session)
+        await Posted.shared._setPurchasesUserId("rc-user-1", config: config, session: session)
 
         XCTAssertNil(StubURLProtocol.requestCallCount[Self.installURL])
-        XCTAssertEqual(StubURLProtocol.requestCallCount[Self.revenueCatUserURL], 1)
-        XCTAssertTrue(StorageUtils.isRevenueCatUserReported())
+        XCTAssertEqual(StubURLProtocol.requestCallCount[Self.purchasesUserURL], 1)
+        XCTAssertTrue(StorageUtils.isPurchasesUserReported())
     }
 
     func testSendsNothingWhileTheInstallIsUnreported() async {
         StubURLProtocol.responseStatusCode = 500
 
-        await Posted.shared._setRevenueCatUserId("rc-user-1", config: config, session: session)
+        await Posted.shared._setPurchasesUserId("rc-user-1", config: config, session: session)
 
         XCTAssertEqual(StubURLProtocol.requestCallCount[Self.installURL], 1)
-        XCTAssertNil(StubURLProtocol.requestCallCount[Self.revenueCatUserURL])
-        XCTAssertFalse(StorageUtils.isRevenueCatUserReported())
+        XCTAssertNil(StubURLProtocol.requestCallCount[Self.purchasesUserURL])
+        XCTAssertFalse(StorageUtils.isPurchasesUserReported())
     }
 
     func testSendsNothingOnceReported() async {
-        StorageUtils.markRevenueCatUserReported()
+        StorageUtils.markPurchasesUserReported()
 
-        await Posted.shared._setRevenueCatUserId("rc-user-1", config: config, session: session)
+        await Posted.shared._setPurchasesUserId("rc-user-1", config: config, session: session)
 
         XCTAssertTrue(StubURLProtocol.requestCallCount.isEmpty)
     }
@@ -87,29 +87,29 @@ final class RevenueCatUserTests: XCTestCase {
     func testNon2xxLeavesFlagUnarmedSoTheNextCallRetries() async {
         StorageUtils.markInstallReported()
         StubURLProtocol.responseStatusCode = 404
-        await Posted.shared._setRevenueCatUserId("rc-user-1", config: config, session: session)
-        XCTAssertFalse(StorageUtils.isRevenueCatUserReported())
+        await Posted.shared._setPurchasesUserId("rc-user-1", config: config, session: session)
+        XCTAssertFalse(StorageUtils.isPurchasesUserReported())
 
         StubURLProtocol.responseStatusCode = 200
-        await Posted.shared._setRevenueCatUserId("rc-user-1", config: config, session: session)
+        await Posted.shared._setPurchasesUserId("rc-user-1", config: config, session: session)
 
-        XCTAssertEqual(StubURLProtocol.requestCallCount[Self.revenueCatUserURL], 2)
-        XCTAssertTrue(StorageUtils.isRevenueCatUserReported())
+        XCTAssertEqual(StubURLProtocol.requestCallCount[Self.purchasesUserURL], 2)
+        XCTAssertTrue(StorageUtils.isPurchasesUserReported())
     }
 
     func testConcurrentCallsShareOneRequest() async {
-        async let first: Void = Posted.shared._setRevenueCatUserId("rc-user-1", config: config, session: session)
-        async let second: Void = Posted.shared._setRevenueCatUserId("rc-user-1", config: config, session: session)
+        async let first: Void = Posted.shared._setPurchasesUserId("rc-user-1", config: config, session: session)
+        async let second: Void = Posted.shared._setPurchasesUserId("rc-user-1", config: config, session: session)
         _ = await (first, second)
 
-        XCTAssertEqual(StubURLProtocol.requestCallCount[Self.revenueCatUserURL], 1)
-        XCTAssertTrue(StorageUtils.isRevenueCatUserReported())
+        XCTAssertEqual(StubURLProtocol.requestCallCount[Self.purchasesUserURL], 1)
+        XCTAssertTrue(StorageUtils.isPurchasesUserReported())
     }
 
     func testEmptyIDSendsNothing() async {
-        await Posted.shared._setRevenueCatUserId("", config: config, session: session)
+        await Posted.shared._setPurchasesUserId("", config: config, session: session)
 
         XCTAssertTrue(StubURLProtocol.requestCallCount.isEmpty)
-        XCTAssertFalse(StorageUtils.isRevenueCatUserReported())
+        XCTAssertFalse(StorageUtils.isPurchasesUserReported())
     }
 }

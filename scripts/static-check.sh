@@ -11,7 +11,7 @@ echo "▶ doc API drift check (non-blocking, cheap pre-check)"
 # README/CHANGELOG embed Swift snippets for these public symbols; warn if they disappear from
 # Sources/. This only catches symbol removal/rename, not signature drift —
 # Tests/PostedSDKTests/DocAPISnippetTests.swift is the compile-checked authority for that.
-doc_api_symbols=("reportInstall" "setRevenueCatUserId" "PostedConfig")
+doc_api_symbols=("reportInstall" "setPurchasesUserId" "PostedConfig")
 drift=0
 for sym in "${doc_api_symbols[@]}"; do
   if ! grep -rq "func ${sym}\|enum ${sym}\|struct ${sym}\|var ${sym}" Sources/; then

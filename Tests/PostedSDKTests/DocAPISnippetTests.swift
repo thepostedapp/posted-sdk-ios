@@ -21,10 +21,10 @@ private enum DocAPISnippets {
         }
     }
 
-    // README "Attribute RevenueCat purchases"
-    static func setRevenueCatUserIdSnippet(config: PostedConfig, appUserID: String) {
+    // README "Purchases"
+    static func setPurchasesUserIdSnippet(config: PostedConfig, appUserID: String) {
         Task {
-            await Posted.shared.setRevenueCatUserId(appUserID, config: config)
+            await Posted.shared.setPurchasesUserId(appUserID, config: config)
         }
     }
 }

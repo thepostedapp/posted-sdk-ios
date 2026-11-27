@@ -6,7 +6,7 @@ enum StorageUtils {
     enum Constants {
         static let deviceIDKey = "Posted_deviceId"
         static let installReportedKey = "Posted_installReported"
-        static let revenueCatUserReportedKey = "Posted_revenueCatUserReported"
+        static let purchasesUserReportedKey = "Posted_revenueCatUserReported"
     }
 
     static func isInstallReported() -> Bool {
@@ -21,15 +21,15 @@ enum StorageUtils {
         UserDefaults.standard.removeObject(forKey: Constants.installReportedKey)
     }
 
-    static func isRevenueCatUserReported() -> Bool {
-        return UserDefaults.standard.bool(forKey: Constants.revenueCatUserReportedKey)
+    static func isPurchasesUserReported() -> Bool {
+        return UserDefaults.standard.bool(forKey: Constants.purchasesUserReportedKey)
     }
 
-    static func markRevenueCatUserReported() {
-        UserDefaults.standard.set(true, forKey: Constants.revenueCatUserReportedKey)
+    static func markPurchasesUserReported() {
+        UserDefaults.standard.set(true, forKey: Constants.purchasesUserReportedKey)
     }
 
-    static func clearRevenueCatUserReported() {
-        UserDefaults.standard.removeObject(forKey: Constants.revenueCatUserReportedKey)
+    static func clearPurchasesUserReported() {
+        UserDefaults.standard.removeObject(forKey: Constants.purchasesUserReportedKey)
     }
 }
